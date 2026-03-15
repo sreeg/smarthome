@@ -1,0 +1,237 @@
+input {
+  display: none;
+}
+
+Button.switch-on,
+Button.switch-off,
+Button.scene-switch {
+  height: 100px;
+  width: 100px;
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  padding: 0;
+  font-size: small;
+  white-space: nowrap;
+  border-radius: 20px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px 0 rgba(0,0,0,0.05);
+}
+
+Button.switch-on:hover,
+Button.scene-switch:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.15);
+}
+
+Button.switch-off:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.1);
+}
+
+.scene-switch {
+  border: 1px solid #554c33 !important;
+  color: #fde293 !important;
+  background-color: #554c33 !important;
+}
+
+body[data-theme='light'] .scene-switch {
+  border-color: #FFB74D !important;
+  color: #E65100 !important;
+  background-color: #FFE0B2 !important;
+}
+
+body[data-theme='ocean'] .scene-switch {
+  border-color: #0077B6 !important;
+  color: #FFFFFF !important;
+  background-color: #00B4D8 !important;
+}
+
+body[data-theme='forest'] .scene-switch {
+  border-color: #2D6A4F !important;
+  color: #FFFFFF !important;
+  background-color: #40916C !important;
+}
+
+body[data-theme='sunset'] .scene-switch {
+  border-color: #E07A5F !important;
+  color: #461220 !important;
+  background-color: #E9C46A !important;
+}
+
+.scene-switch svg {
+  color: currentColor;
+}
+
+Button.switch-on label>div,
+Button.switch-off label>div,
+Button.scene-switch label>div {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+Button.switch-off {
+  color: #ffffff;
+  /* opacity: 0.6; */
+  border-color: #303134;
+  background-color: #303134;
+}
+
+body[data-theme='light'] Button.switch-off {
+  color: #161c24;
+  border-color: #c4cdd5;
+  background-color: #ffffff;
+}
+
+body[data-theme='ocean'] Button.switch-off {
+  color: #06283D;
+  border-color: #5E7F90;
+  background-color: #D6ECF8;
+}
+
+body[data-theme='forest'] Button.switch-off {
+  color: #081C15;
+  border-color: #52796F;
+  background-color: #C8E6C9;
+}
+
+body[data-theme='sunset'] Button.switch-off {
+  color: #264653;
+  border-color: #8AB17D;
+  background-color: #FFE0B2;
+}
+
+Button.switch-on .content,
+Button.switch-off .content,
+.scene-switch .content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.fan-paper Button.switch-on,
+.fan-paper Button.switch-off {
+  zoom: 0.8;
+  margin-bottom: 8px;
+}
+
+.MuiSlider-vertical {
+  margin-left: 12px;
+  height: 75px;
+}
+
+.MuiSlider-rail {
+  color: transparent;
+}
+
+.MuiSlider-mark {
+  border-radius: 8px;
+}
+
+.MuiSlider-thumb {
+  border-radius: 8px;
+  width: 10px;
+  height: 10px;
+}
+
+.MuiSlider-markActive {
+  background-color: transparent;
+}
+
+.MuiSlider-markActive~.MuiSlider-mark {
+  color: transparent;
+  border: 1px solid #ffffff;
+}
+
+body[data-theme='light'] .MuiSlider-markActive~.MuiSlider-mark {
+  border: 1px solid #637381;
+}
+
+body[data-theme='ocean'] .MuiSlider-markActive~.MuiSlider-mark {
+  border: 1px solid #06283D;
+}
+
+body[data-theme='forest'] .MuiSlider-markActive~.MuiSlider-mark {
+  border: 1px solid #081C15;
+}
+
+body[data-theme='sunset'] .MuiSlider-markActive~.MuiSlider-mark {
+  border: 1px solid #264653;
+}
+
+.MuiSlider-mark {
+  width: 10px;
+  height: 10px;
+}
+
+.MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+  color: #ffffff;
+}
+
+body[data-theme='light'] .MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+  color: #161c24;
+}
+
+body[data-theme='ocean'] .MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+  color: #06283D;
+}
+
+body[data-theme='forest'] .MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+  color: #081C15;
+}
+
+body[data-theme='sunset'] .MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+  color: #264653;
+}
+
+@media only screen and (max-width: 600px) {
+
+  Button.switch-on,
+  Button.switch-off,
+  Button.scene-switch {
+    height: auto;
+    width: auto;
+  }
+
+  Button.switch-on label,
+  Button.switch-off label,
+  Button.scene-switch label {
+    display: flex;
+    align-items: center;
+  }
+
+  .MuiSlider-colorSecondary {
+    padding: 12px 0;
+  }
+
+  /* .content-temparature svg, */
+  Button svg,
+  Button svg,
+  .card-ac svg {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  .scene-switch .content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .curtain-content,
+  .MuiCardContent-root {
+    padding: 8px !important;
+  }
+
+  .MuiButtonBase-root.MuiToggleButtonGroup-groupedHorizontal {
+    padding: 8px;
+  }
+
+}
