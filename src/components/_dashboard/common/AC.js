@@ -40,12 +40,9 @@ const AC = ({ sVal, sID, sName, stateHandler }) => {
     <Card sx={{ minWidth: 280, mb: 1, borderRadius: '24px', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)', display: 'inline-block' }}>
       <CardContent sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '16px !important', bgcolor: 'background.paper' }}>
         
-        {/* Left Side: Icon & Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Icon path={mdiAirConditioner} size={1.2} color="currentColor" />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {sName}
-          </Typography>
+        {/* Left Side: Icon */}
+        <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
+          <Icon path={mdiAirConditioner} size={1.5} style={{ color: 'var(--mui-palette-text-primary, #000)' }} />
         </div>
 
         {/* Center: Temperature Stepper */}
