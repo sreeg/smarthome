@@ -10,6 +10,7 @@ import NTabs from './../components/NavSectionTab';
 import sidebarConfig from './../layouts/dashboard/SidebarConfig';
 import Fan from '../components/_dashboard/common/Fan';
 import Switch from '../components/_dashboard/common/Switch';
+import ActiveDevices from '../components/_dashboard/common/ActiveDevices';
 import { mdiWaterBoiler, mdiAirConditioner } from '@mdi/js';
 import { decodeHtml } from './../utils/commons';
 import ColorAndBrightness from '../components/_dashboard/common/ColorAndBrightness';
@@ -143,8 +144,11 @@ class DashboardApp extends React.Component {
       <Page title="Myhome E302">
         <Container maxWidth="xl">
           <Box sx={{ pb: 0 }}>
-            <Typography variant="h4">Welcome, E302!</Typography>
+            <Typography variant="h4" sx={{ mb: 2 }}>Welcome, E302!</Typography>
           </Box>
+
+          {/* ACTIVE APPLIANCES ROW */}
+          <ActiveDevices />
 
           <NTabs navConfig={sidebarConfig} style={{ marginBottom: 24 }} />
 
