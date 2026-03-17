@@ -1,27 +1,20 @@
-// material
-import { Box, Grid, Container, Typography, Button } from '@mui/material';
-// components
+import { Box, Container, Title, Group } from '@mantine/core';
 import Page from '../components/Page';
-import Kitchen from '../components/_dashboard/kitchen';
-import { InlineIcon } from '@iconify/react';
+import KitchenRoom from '../components/_dashboard/kitchen';
+import { Icon } from '@iconify/react';
 import kitchen from '@iconify/icons-mdi/kitchen-counter';
-import NTabs from '../components/NavSectionTab';
 import sidebarConfig from '../layouts/dashboard/SidebarConfig';
 
-// ----------------------------------------------------------------------
-
-export default function Office() {
+export default function Kitchen() {
   return (
     <Page title="Kitchen">
-      <Container maxWidth="xl">
-        <Box style={{ display: 'flex', alignItems: 'center' }} sx={{ pb: 1 }}>
-          <InlineIcon width={'24'} icon={kitchen} />
-          <Typography style={{ display: 'inline', marginLeft: '8px' }} variant="h4">
-            Kitchen
-          </Typography>
-        </Box>
-        <NTabs navConfig={sidebarConfig} style={{marginBottom: 24}}/>
-        <Kitchen />
+      <Container size="xl">
+        <Group mb="sm">
+          <Icon icon={kitchen} width={24} height={24} />
+          <Title order={2}>Kitchen</Title>
+        </Group>
+
+        <KitchenRoom />
       </Container>
     </Page>
   );

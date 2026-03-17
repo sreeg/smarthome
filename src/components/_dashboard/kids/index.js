@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Grid, Stack, Loader, Text, Box, Group } from '@mantine/core';
 import Switch from '../common/Switch';
 import SwitchCustomIcon from '../common/SwitchCustomIcon';
 import Curtain from '../common/Curtain';
@@ -6,144 +7,128 @@ import Zone from '../common/Zone';
 import Fan from '../common/Fan';
 import { mdiLamp, mdiCoachLamp, mdiWaterBoiler, mdiStringLights } from '@mdi/js';
 import { GiElectricalSocket } from 'react-icons/gi';
-import Grid from '@mui/material/Grid';
 import { decodeHtml } from '../../../utils/commons';
 import ColorAndBrightness from '../common/ColorAndBrightness';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class Kids extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      kfan: 'OFF',
-      kcenterzone: 'OFF',
-      kaczone: 'OFF',
-      kwardrobe: 'OFF',
-      kwalllamp: 'OFF',
-      klight2: 'OFF',
-      klight4: 'OFF',
-      kfanspeed: 5,
-      kcolor: 5,
-      kbrightness: 5,
-      kblackout: 'CLOSE',
-      kgyser: 'OFF',
-      ktablelamp: 'OFF',
-      ksocket1: 'OFF',
-      ksocketwardrobe: 'OFF',
-      updateTimer: 0
+export default function KidsRoom() {
+  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({
+    kfan: 'OFF',
+    kcenterzone: 'OFF',
+    kaczone: 'OFF',
+    kwardrobe: 'OFF',
+    kwalllamp: 'OFF',
+    klight2: 'OFF',
+    klight4: 'OFF',
+    kfanspeed: 5,
+    kcolor: 5,
+    kbrightness: 5,
+    kblackout: 'CLOSE',
+    kgyser: 'OFF',
+    ktablelamp: 'OFF',
+    ksocket1: 'OFF',
+    ksocketwardrobe: 'OFF'
+  });
+
+  const stateHandler = (obj, val) => {
+    setState(prev => ({ ...prev, [obj]: val }));
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const endpoints = [
+          { url: '/kgyserstatus', mapping: (d) => ({ ksocketwardrobe: d['7'].power, kgyser: d['8'].power }) },
+          { url: '/kblackoutcurtainstatus', mapping: (d) => ({ kblackout: d['1'].curtain }) },
+          { url: '/ksbstatus', mapping: (d) => ({ kwalllamp: d['1'].power, ksocket1: d['2'].power }) },
+          { url: '/kboardmainstatus', mapping: (d) => ({ kbrightness: Math.round(d['1'].speed / 20), kcolor: Math.round(d['2'].speed / 20), kaczone: d['5'].power, kcenterzone: d['3'].power, kwardrobe: d['7'].power }) },
+          { url: '/kboardtwostatus', mapping: (d) => ({ kfan: d['1'].power, kfanspeed: Math.round(d['1'].speed / 20), klight2: d['2'].power, kwalllamp: d['3'].power, klight4: d['4'].power }) }
+        ];
+
+        const results = await Promise.all(endpoints.map(e => fetch(`${gateway}${e.url}`).then(r => r.text())));
+        
+        let newState = { ...state };
+        results.forEach((rawData, i) => {
+          try {
+            const parsed = JSON.parse(decodeHtml(rawData));
+            newState = { ...newState, ...endpoints[i].mapping(parsed) };
+          } catch(e) {}
+        });
+
+        setState(newState);
+        setLoading(false);
+      } catch (err) {
+        console.error('Kids state fetch failed:', err);
+        setLoading(false);
+      }
     };
-  }
 
-  stateHandler(obj, val) {
-    this.setState({
-      [obj]: val
-    });
-  }
+    fetchData();
+    const interval = setInterval(fetchData, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
-  componentWillUnmount() {
-    clearInterval(this.updateTimer);
-  }
-  componentDidMount() {
-    this.updateTimer = setInterval(() => window.location.reload(), 300000);
-    var that = this;
-    fetch(gateway + '/kgyserstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ ksocketwardrobe: data['7'].power });
-        this.setState({ kgyser: data['8'].power });
-      });
-    fetch(gateway + '/kblackoutcurtainstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ kblackout: data['1'].curtain });
-      });
-    fetch(gateway + '/ksbstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ kwalllamp: data['1'].power });
-        this.setState({ ksocket1: data['2'].power });
-      });
-    fetch(gateway + '/kboardmainstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        var speed = data['1'].speed;
-        this.setState({ kbrightness: Math.round(speed / 20) });
-        speed = data['2'].speed;
-        this.setState({ kcolor: Math.round(speed / 20) });
-        this.setState({ kaczone: data['5'].power });
-        this.setState({ kcenterzone: data['3'].power });
-        this.setState({ kwardrobe: data['7'].power });
-      });
-    fetch(gateway + '/kboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ kfan: data['1'].power });
-        var speed = data['1'].speed;
-        this.setState({ kfanspeed: Math.round(speed / 20) });
-        this.setState({ klight2: data['2'].power });
-        this.setState({ kwalllamp: data['3'].power });
-        this.setState({ klight4: data['4'].power });
-        this.setState({ loading: false });
-      });
-  }
-  render() {
-    var stateHandler = this.stateHandler;
-    return (
-      <>
-        {this.state.loading ? (
-          <div>Loading</div>
-        ) : (
-          <>
-            <Grid pb={3} container spacing={2}>
-              <Grid item>
-                <ColorAndBrightness cDefaultValue={this.state.kcolor} bDefaultValue={this.state.kbrightness} sColor="kcolor" sBrightness="kbrightness" stateHandler={stateHandler.bind(this)} />
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.kaczone} zoneClass="zone23 zone23top" sID="kaczone" sIcon={mdiStringLights} sName="AC" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.kcenterzone} zoneClass="zone23 zone23center" sID="kcenterzone" sIcon={mdiStringLights} sName="Center" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.kwardrobe} zoneClass="zone23 zone23center" sID="kwardrobe" sIcon={mdiStringLights} sName="Wardrobe" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-              <Grid item>
-                <Fan sVal={this.state.kfan} sFval={this.state.kfanspeed} sID="kfan" sIDFS="kfanspeed" sName="Fan" stateHandler={stateHandler.bind(this)} />
-              </Grid>
-            </Grid>
+  if (loading) return (
+    <Stack align="center" py="xl">
+      <Loader size="lg" color="teal" />
+      <Text c="dimmed">Loading Kids Room...</Text>
+    </Stack>
+  );
 
-            <Grid pb={3} container spacing={2}>
-              <Grid item>
-                <Switch sVal={this.state.kwalllamp} sID="kwalllamp" sIcon={mdiCoachLamp} sName="Wall lamp" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.kgyser} sID="kgyser" sIcon={mdiWaterBoiler} sName="Gyser" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.ktablelamp} sID="ktablelamp" sIcon={mdiLamp} sName="Table Lamp" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.ksocket1} sID="ksocket1" sIcon={GiElectricalSocket} sName="Socket 1" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.ksocketwardrobe} sID="ksocketwardrobe" sIcon={GiElectricalSocket} sName="Socket Wardrobe" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-            </Grid>
-            <Grid container spacing={2}>
-              <Grid item>
-                <Curtain sVal={this.state.kblackout} sID="kblackout" sName="Blackout curtain" stateHandler={stateHandler.bind(this)}></Curtain>
-              </Grid>
-            </Grid>
-          </>
-        )}
-      </>
-    );
-  }
+  return (
+    <Stack gap="xl" pb="xl">
+      <Grid gutter="md" align="center">
+        <Grid.Col span={{ base: 12, md: 'auto' }}>
+          <ColorAndBrightness 
+            cDefaultValue={state.kcolor} 
+            bDefaultValue={state.kbrightness} 
+            sColor="kcolor" 
+            sBrightness="kbrightness" 
+            stateHandler={stateHandler} 
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Zone sVal={state.kaczone} zoneClass="zone23 zone23top" sID="kaczone" sName="AC" stateHandler={stateHandler} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Zone sVal={state.kcenterzone} zoneClass="zone23 zone23center" sID="kcenterzone" sName="Center" stateHandler={stateHandler} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Zone sVal={state.kwardrobe} zoneClass="zone23 zone23center" sID="kwardrobe" sName="Wardrobe" stateHandler={stateHandler} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Fan sVal={state.kfan} sFval={state.kfanspeed} sID="kfan" sIDFS="kfanspeed" sName="Fan" stateHandler={stateHandler} />
+        </Grid.Col>
+      </Grid>
+
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Switches & Lighting</Text>
+        <Grid gutter="md">
+          {[
+            { id: 'kwalllamp', name: 'Wall lamp', iconPath: mdiCoachLamp },
+            { id: 'kgyser', name: 'Geyser', iconPath: mdiWaterBoiler },
+            { id: 'ktablelamp', name: 'Table Lamp', iconPath: mdiLamp },
+            { id: 'ksocket1', name: 'Socket 1', icon: GiElectricalSocket },
+            { id: 'ksocketwardrobe', name: 'Wardrobe Socket', icon: GiElectricalSocket }
+          ].map(sw => (
+            <Grid.Col key={sw.id} span={{ base: 6, sm: 4, lg: 2.4 }}>
+              {sw.iconPath ? (
+                <Switch sVal={state[sw.id]} sID={sw.id} sIcon={sw.iconPath} sName={sw.name} stateHandler={stateHandler} />
+              ) : (
+                <SwitchCustomIcon sVal={state[sw.id]} sID={sw.id} sIcon={sw.icon} sName={sw.name} stateHandler={stateHandler} />
+              )}
+            </Grid.Col>
+          ))}
+        </Grid>
+      </Box>
+
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Comfort</Text>
+        <Group gap="md">
+          <Curtain sVal={state.kblackout} sID="kblackout" sName="Blackout" stateHandler={stateHandler} />
+        </Group>
+      </Box>
+    </Stack>
+  );
 }
-export default Kids;

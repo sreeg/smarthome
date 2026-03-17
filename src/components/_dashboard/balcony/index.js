@@ -1,208 +1,179 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Grid, Stack, Loader, Text, Box, Paper, UnstyledButton, rem, Group, SimpleGrid } from '@mantine/core';
 import Switch from '../common/Switch';
 import SwitchCustomIcon from '../common/SwitchCustomIcon';
 import Zone from '../common/Zone';
 import Curtain from '../common/Curtain';
-import { mdiStringLights, mdiChandelier, mdiOm } from '@mdi/js';
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
+import { mdiStringLights, mdiChandelier, mdiOm, mdiHandsPray, mdiPipeValve } from '@mdi/js';
 import { decodeHtml } from '../../../utils/commons';
-import { mdiHandsPray } from '@mdi/js';
 import { GiByzantinTemple, GiElectricalSocket, GiCandleFlame } from 'react-icons/gi';
 import { FaFan } from 'react-icons/fa';
 import { MdBalcony } from 'react-icons/md';
-import { mdiPipeValve } from '@mdi/js';
 import ColorAndBrightness from '../common/ColorAndBrightness';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class BalconyArea extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      bchandlier: 'OFF',
-      poojaroompanel: 'OFF',
-      poojaomlight: 'OFF',
-      dlight1: 'OFF',
-      dlight2: 'OFF',
-      dinningcenterzone: 'OFF',
-      dinningaczone: 'OFF',
-      poojaroom: 'OFF',
-      bcolor: 5,
-      bbrightness: 5,
-      bsheer: 'CLOSE',
-      bblackout: 'CLOSE',
-      bzone: 'OFF',
-      bexhaust: 'OFF',
-      bsocket: 'OFF',
-      balconyzone: 'OFF',
-      bsocket: 'OFF',
-      bexhaust: 'OFF',
-      bvalve: 'OFF'
-    };
-  }
+export default function BalconyRoom() {
+  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({
+    bchandlier: 'OFF',
+    poojaroompanel: 'OFF',
+    poojaomlight: 'OFF',
+    dlight1: 'OFF',
+    dlight2: 'OFF',
+    dinningcenterzone: 'OFF',
+    dinningaczone: 'OFF',
+    poojaroom: 'OFF',
+    poojaroomunderlight: 'OFF',
+    bcolor: 5,
+    bbrightness: 5,
+    bsheer: 'CLOSE',
+    bblackout: 'CLOSE',
+    balconyzone: 'OFF',
+    bsocket: 'OFF',
+    bexhaust: 'OFF',
+    bvalve: 'OFF'
+  });
 
-  stateHandler(obj, val) {
-    this.setState({
-      [obj]: val
-    });
-  }
-
-  handleCozyMode = (e) => {
-    fetch(gateway + '/dinningcozy/').then((response) => response.json());
+  const stateHandler = (obj, val) => {
+    setState(prev => ({ ...prev, [obj]: val }));
   };
 
-  componentDidMount() {
-    var that = this;
-    fetch(gateway + '/bboardstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ balconyzone: data['3'].power });
-      });
-    fetch(gateway + '/bboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ bsocket: data['1'].power });
-        this.setState({ bexhaust: data['2'].power });
-      });
-    fetch(gateway + '/bsheercurtainstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ bsheer: data['1'].curtain });
-      });
-    fetch(gateway + '/bblackoutcurtainstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ bblackout: data['1'].curtain });
-      });
-    fetch(gateway + '/dinningboardstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = decodeHtml(data);
-        data = JSON.parse(data);
-        var speed = data['1'].speed;
-        this.setState({ bbrightness: Math.round(speed / 20) });
-        speed = data['2'].speed;
-        this.setState({ bcolor: Math.round(speed / 20) });
-        this.setState({ dinningcenterzone: data['5'].power });
-        this.setState({ poojaroom: data['7'].power });
-        this.setState({ dinningaczone: data['3'].power });
-      });
-    fetch(gateway + '/poojaboardstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = decodeHtml(data);
-        data = JSON.parse(data);
-        this.setState({ poojaroompanel: data['1'].power });
-        this.setState({ poojaroomunderlight: data['2'].power });
-      });
-    fetch(gateway + '/dinningboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = decodeHtml(data);
-        data = JSON.parse(data);
-        this.setState({ dlight1: data['1'].power });
-        this.setState({ dlight2: data['2'].power });
-        this.setState({ bchandlier: data['4'].power });
-        this.setState({ dlight3: data['3'].power });
-        this.setState({ loading: false });
-      });
-    fetch(gateway + '/watervalvestatus')
-      .then((response) => response.text())
-      .then((data) => {
-        try {
-          data = JSON.parse(decodeHtml(data));
-          this.setState({ bvalve: data.state || 'OFF' });
-        } catch (e) {
-          console.error("Failed to parse water valve status:", data);
-        }
-      })
-      .catch((err) => console.error("Fetch error for water valve status:", err));
-  }
-  render() {
-    var stateHandler = this.stateHandler;
-    return (
-      <>
-        {this.state.loading ? (
-          <div>Loading</div>
-        ) : (
-          <>
-            <Grid pb={3} container spacing={2}>
-              <Grid item>
-                <ColorAndBrightness cDefaultValue={this.state.dinningcolor} bDefaultValue={this.state.dinningbrightness} sColor="dinningcolor" sBrightness="dinningbrightness" stateHandler={stateHandler.bind(this)} />
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.dinningaczone} zoneClass="zone33 zone33left" sID="dinningaczone" sIcon={mdiStringLights} sName="AC" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.dinningcenterzone} zoneClass="zone33 zone33center" sID="dinningcenterzone" sIcon={mdiStringLights} sName="Center" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-            </Grid>
+  const handleCozyMode = () => {
+    fetch(`${gateway}/dinningcozy/`).then((response) => response.json());
+  };
 
-            <Grid pb={3} container spacing={2}>
-              <Grid item>
-                <Switch sVal={this.state.poojaroom} sID="poojaroom" sIcon={mdiHandsPray} sName="Pooja" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.balconyzone} sID="balconyzone" sIcon={MdBalcony} sName="Balcony" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.bchandlier} sID="bchandlier" sIcon={mdiChandelier} sName="Chandlier" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.poojaroompanel} sID="poojaroompanel" sIcon={GiByzantinTemple} sName="Panel light" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.poojaroomunderlight} sID="poojaroomunderlight" sIcon={mdiChandelier} sName="Under light" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.poojaomlight} sID="poojaomlight" sIcon={mdiOm} sName="Om light" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.bsocket} sID="bsocket" sIcon={GiElectricalSocket} sName="Balcony socket" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-              <Grid item>
-                <SwitchCustomIcon sVal={this.state.bexhaust} sID="bexhaust" sIcon={FaFan} sName="Balcony exhaust" stateHandler={stateHandler.bind(this)}></SwitchCustomIcon>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.bvalve} sID="bvalve" sIcon={mdiPipeValve} sName="Water valve" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              {/* <Grid item>
-                    <Switch sVal={this.state.dlight1} sID="dlight1" sIcon={mdiLightbulbVariantOutline} sName="Dinning light 1" stateHandler={stateHandler.bind(this)}></Switch>
-                  </Grid>
-                  <Grid item>
-                    <Switch sVal={this.state.dlight2} sID="dlight2" sIcon={mdiLightbulbVariantOutline} sName="Dinning light 2" stateHandler={stateHandler.bind(this)}></Switch>
-                  </Grid>
-                  <Grid item>
-                    <Switch sVal={this.state.dlight3} sID="dlight3" sIcon={mdiLightbulbVariantOutline} sName="Dinning light 3" stateHandler={stateHandler.bind(this)}></Switch>
-                  </Grid> */}
-            </Grid>
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const endpoints = [
+          { url: '/bboardstatus', mapping: (d) => ({ balconyzone: d['3'].power }) },
+          { url: '/bboardtwostatus', mapping: (d) => ({ bsocket: d['1'].power, bexhaust: d['2'].power }) },
+          { url: '/bsheercurtainstatus', mapping: (d) => ({ bsheer: d['1'].curtain }) },
+          { url: '/bblackoutcurtainstatus', mapping: (d) => ({ bblackout: d['1'].curtain }) },
+          { url: '/dinningboardstatus', mapping: (d) => ({ bbrightness: Math.round(d['1'].speed / 20), bcolor: Math.round(d['2'].speed / 20), dinningcenterzone: d['5'].power, poojaroom: d['7'].power, dinningaczone: d['3'].power }) },
+          { url: '/poojaboardstatus', mapping: (d) => ({ poojaroompanel: d['1'].power, poojaroomunderlight: d['2'].power }) },
+          { url: '/dinningboardtwostatus', mapping: (d) => ({ dlight1: d['1'].power, dlight2: d['2'].power, bchandlier: d['4'].power, dlight3: d['3'].power }) },
+          { url: '/watervalvestatus', mapping: (d) => ({ bvalve: d.state || 'OFF' }) }
+        ];
 
-            <Grid pb={3} container spacing={2}>
-              <Grid item>
-                <Curtain sVal={this.state.bsheer} sID="bsheer" sName="Sheer curtain" stateHandler={stateHandler.bind(this)}></Curtain>
-              </Grid>
-              <Grid item>
-                <Curtain sVal={this.state.bblackout} sID="bblackout" sName="Blackout curtain" stateHandler={stateHandler.bind(this)}></Curtain>
-              </Grid>
-            </Grid>
+        const results = await Promise.all(endpoints.map(e => fetch(`${gateway}${e.url}`).then(r => r.text())));
+        
+        let newState = { ...state };
+        results.forEach((rawData, i) => {
+          try {
+            const parsed = JSON.parse(decodeHtml(rawData));
+            newState = { ...newState, ...endpoints[i].mapping(parsed) };
+          } catch(e) {}
+        });
 
-            <Grid item xs={6}>
-              <Button className="scene-switch" variant="outlined" onClick={this.handleCozyMode} size="large" color="secondary" disableFocusRipple={true}>
-                <div className="content">
-                  <GiCandleFlame size={48} />
-                  <div>Cozy mode</div>
-                </div>
-              </Button>
-            </Grid>
-          </>
-        )}
-      </>
-    );
-  }
+        setState(newState);
+        setLoading(false);
+      } catch (err) {
+        console.error('Balcony state fetch failed:', err);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return (
+    <Stack align="center" py="xl">
+      <Loader size="lg" color="teal" />
+      <Text c="dimmed">Loading Balcony & Dining...</Text>
+    </Stack>
+  );
+
+  return (
+    <Stack gap="xl" pb="xl">
+      <Grid gutter="md" align="center">
+        <Grid.Col span={{ base: 12, md: 'auto' }}>
+          <ColorAndBrightness 
+            cDefaultValue={state.bcolor} 
+            bDefaultValue={state.bbrightness} 
+            sColor="bcolor" 
+            sBrightness="bbrightness" 
+            stateHandler={stateHandler} 
+          />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Zone sVal={state.dinningaczone} zoneClass="zone33 zone33left" sID="dinningaczone" sName="AC" stateHandler={stateHandler} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+          <Zone sVal={state.dinningcenterzone} zoneClass="zone33 zone33center" sID="dinningcenterzone" sName="Center" stateHandler={stateHandler} />
+        </Grid.Col>
+      </Grid>
+
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Dining & Pooja</Text>
+        <Grid gutter="md">
+          {[
+            { id: 'poojaroom', name: 'Pooja', iconPath: mdiHandsPray },
+            { id: 'bchandlier', name: 'Chandlier', iconPath: mdiChandelier },
+            { id: 'poojaroompanel', name: 'Panel', icon: GiByzantinTemple },
+            { id: 'poojaroomunderlight', name: 'Underlight', iconPath: mdiChandelier },
+            { id: 'poojaomlight', name: 'Om Light', iconPath: mdiOm }
+          ].map(sw => (
+            <Grid.Col key={sw.id} span={{ base: 6, sm: 4, lg: 2.4 }}>
+              {sw.iconPath ? (
+                <Switch sVal={state[sw.id]} sID={sw.id} sIcon={sw.iconPath} sName={sw.name} stateHandler={stateHandler} />
+              ) : (
+                <SwitchCustomIcon sVal={state[sw.id]} sID={sw.id} sIcon={sw.icon} sName={sw.name} stateHandler={stateHandler} />
+              )}
+            </Grid.Col>
+          ))}
+        </Grid>
+      </Box>
+
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Balcony & Utility</Text>
+        <Grid gutter="md">
+          {[
+            { id: 'balconyzone', name: 'Balcony', icon: MdBalcony },
+            { id: 'bsocket', name: 'Balcony Socket', icon: GiElectricalSocket },
+            { id: 'bexhaust', name: 'Exhaust Fan', icon: FaFan },
+            { id: 'bvalve', name: 'Water Valve', iconPath: mdiPipeValve }
+          ].map(sw => (
+            <Grid.Col key={sw.id} span={{ base: 6, sm: 4, lg: 3 }}>
+              {sw.iconPath ? (
+                <Switch sVal={state[sw.id]} sID={sw.id} sIcon={sw.iconPath} sName={sw.name} stateHandler={stateHandler} />
+              ) : (
+                <SwitchCustomIcon sVal={state[sw.id]} sID={sw.id} sIcon={sw.icon} sName={sw.name} stateHandler={stateHandler} />
+              )}
+            </Grid.Col>
+          ))}
+          <Grid.Col span={{ base: 6, sm: 4, lg: 3 }}>
+            <Paper shadow="sm" radius="lg" withBorder style={{ overflow: 'hidden' }}>
+              <UnstyledButton
+                onClick={handleCozyMode}
+                p="md"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: rem(8),
+                  backgroundColor: 'var(--mantine-color-orange-light)',
+                  color: 'var(--mantine-color-orange-9)',
+                }}
+              >
+                <GiCandleFlame size={32} />
+                <Text size="xs" fw={700} tt="uppercase">Cozy Mode</Text>
+              </UnstyledButton>
+            </Paper>
+          </Grid.Col>
+        </Grid>
+      </Box>
+
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Window Controls</Text>
+        <Group gap="md">
+          <Curtain sVal={state.bsheer} sID="bsheer" sName="Sheer" stateHandler={stateHandler} />
+          <Curtain sVal={state.bblackout} sID="bblackout" sName="Blackout" stateHandler={stateHandler} />
+        </Group>
+      </Box>
+    </Stack>
+  );
 }
-export default BalconyArea;

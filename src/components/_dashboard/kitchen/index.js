@@ -1,93 +1,89 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Grid, Stack, Loader, Text, Box } from '@mantine/core';
 import Switch from '../common/Switch';
 import Zone from '../common/Zone';
 import { mdiCoachLamp, mdiStringLights } from '@mdi/js';
-import Grid from '@mui/material/Grid';
 import { decodeHtml } from '../../../utils/commons';
 import ColorAndBrightness from '../common/ColorAndBrightness';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class Kitchen extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      kicenterzone: 'OFF',
-      kiwalllamp: 'OFF',
-      kiservicelight: 'OFF',
-      kicolor: 5,
-      kibrightness: 5
+export default function KitchenRoom() {
+  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({
+    kicenterzone: 'OFF',
+    kiwalllamp: 'OFF',
+    kiservicelight: 'OFF',
+    kicolor: 5,
+    kibrightness: 5
+  });
+
+  const stateHandler = (obj, val) => {
+    setState(prev => ({ ...prev, [obj]: val }));
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const endpoints = [
+          { url: '/kiboardmainstatus', mapping: (d) => ({ kibrightness: Math.round(d['1'].speed / 20), kicolor: Math.round(d['2'].speed / 20), kicenterzone: d['3'].power }) },
+          { url: '/kiboardtwostatus', mapping: (d) => ({ kiservicelight: d['2'].power, kiwalllamp: d['3'].power }) }
+        ];
+
+        const results = await Promise.all(endpoints.map(e => fetch(`${gateway}${e.url}`).then(r => r.text())));
+        
+        let newState = { ...state };
+        results.forEach((rawData, i) => {
+          try {
+            const parsed = JSON.parse(decodeHtml(rawData));
+            newState = { ...newState, ...endpoints[i].mapping(parsed) };
+          } catch(e) {}
+        });
+
+        setState(newState);
+        setLoading(false);
+      } catch (err) {
+        console.error('Kitchen state fetch failed:', err);
+        setLoading(false);
+      }
     };
-  }
 
-  stateHandler(obj, val) {
-    this.setState({
-      [obj]: val
-    });
-  }
+    fetchData();
+    const interval = setInterval(fetchData, 8000);
+    return () => clearInterval(interval);
+  }, []);
 
-  componentWillUnmount() {
-    if (this.updateTimer) clearInterval(this.updateTimer);
-  }
+  if (loading) return (
+    <Stack align="center" py="xl">
+      <Loader size="lg" color="teal" />
+      <Text c="dimmed">Loading Kitchen...</Text>
+    </Stack>
+  );
 
-  componentDidMount() {
-    this.fetchData();
-    this.updateTimer = setInterval(() => this.fetchData(), 3000);
-  }
-
-  fetchData = () => {
-    var that = this;
-    fetch(gateway + '/kiboardmainstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-
-        var speed = data['1'].speed;
-        this.setState({ kibrightness: speed });
-        speed = data['2'].speed;
-        this.setState({ kicolor: speed });
-        this.setState({ kicenterzone: data['3'].power });
-      });
-    fetch(gateway + '/kiboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        console.log(data);
-        this.setState({ kiservicelight: data['2'].power });
-        this.setState({ kiwalllamp: data['3'].power });
-        this.setState({ loading: false });
-      });
-  }
-  render() {
-    var stateHandler = this.stateHandler;
-    return (
-      <>
-        {this.state.loading ? (
-          <div>Loading</div>
-        ) : (
-          <Box sx={{ pb: 5 }}>
-            {/* LIGHTING CATEGORY */}
-            <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>Lighting</Typography>
-            <Grid pb={4} container spacing={2}>
-              <Grid item>
-                <ColorAndBrightness cDefaultValue={this.state.kicolor} bDefaultValue={this.state.kibrightness} sColor="kicolor" sBrightness="kibrightness" stateHandler={stateHandler.bind(this)} />
-              </Grid>
-              <Grid item>
-                <Zone sVal={this.state.kicenterzone} zoneClass="zone23 zone23center" sID="kicenterzone" sIcon={mdiStringLights} sName="Center" stateHandler={stateHandler.bind(this)}></Zone>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.kiwalllamp} sID="kiwalllamp" sIcon={mdiCoachLamp} sName="Wall lamp" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-              <Grid item>
-                <Switch sVal={this.state.kiservicelight} sID="kiservicelight" sIcon={mdiStringLights} sName="Service balcony" stateHandler={stateHandler.bind(this)}></Switch>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
-      </>
-    );
-  }
+  return (
+    <Stack gap="xl" pb="xl">
+      <Box>
+        <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Lighting</Text>
+        <Grid gutter="md" align="center">
+          <Grid.Col span={{ base: 12, md: 'auto' }}>
+            <ColorAndBrightness 
+              cDefaultValue={state.kicolor} 
+              bDefaultValue={state.kibrightness} 
+              sColor="kicolor" 
+              sBrightness="kibrightness" 
+              stateHandler={stateHandler} 
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+            <Zone sVal={state.kicenterzone} zoneClass="zone23 zone23center" sID="kicenterzone" sName="Center" stateHandler={stateHandler} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+            <Switch sVal={state.kiwalllamp} sID="kiwalllamp" sIcon={mdiCoachLamp} sName="Wall lamp" stateHandler={stateHandler} />
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 4, md: 'content' }}>
+            <Switch sVal={state.kiservicelight} sID="kiservicelight" sIcon={mdiStringLights} sName="Service Balcony" stateHandler={stateHandler} />
+          </Grid.Col>
+        </Grid>
+      </Box>
+    </Stack>
+  );
 }
-export default Kitchen;

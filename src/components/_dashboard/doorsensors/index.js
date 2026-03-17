@@ -1,64 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Group, Text, Loader, Badge, rem } from '@mantine/core';
 import Icon from '@mdi/react';
-import { decodeHtml } from '../../../utils/commons';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
-import 'react-circular-progressbar/dist/styles.css';
 import { mdiDoorSlidingOpen, mdiDoorSliding } from '@mdi/js';
+import { decodeHtml } from '../../../utils/commons';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-const MIN_WIDTH = 125;
-class DoorSensors extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      roomName: "",
-      contact: "false"
-    };
-  }
+export default function DoorSensors({ room }) {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({ contact: 'false', roomName: room });
 
-  componentDidMount() {
-    var that = this;
-    var room = '/balconydoorsensor';
-    console.log(this.props.room);
-    if (this.props.room === 'Service balcony') {
-      room = '/servicebalconydoorsensor';
+  useEffect(() => {
+    let endpoint = '/balconydoorsensor';
+    if (room === 'Service balcony') {
+      endpoint = '/servicebalconydoorsensor';
     }
-    fetch(gateway + room)
+    
+    fetch(`${gateway}${endpoint}`)
       .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ contact: data.contact + '' });
-        this.setState({ roomName: that.props.room });
-        this.setState({ loading: false });
+      .then((rawData) => {
+        const parsedData = JSON.parse(decodeHtml(rawData));
+        setData({
+          contact: parsedData.contact + '',
+          roomName: room
+        });
+        setLoading(false);
       })
-      .catch(error => {
-        console.log(error)
-    });
-  }
-  render() {
-    return (
-      <>
-        {this.state.loading ? (
-          <div>Loading...</div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'row', minWidth: MIN_WIDTH }} className="content-sensors">
-              <p style={{ margin: "0 8px" }}>{this.state.roomName}</p>
-              <>
-                {this.state.contact === 'false' ? (
-                  <Icon color='red' path={mdiDoorSlidingOpen} size={1} />) : (
-                  <Icon color='green' path={mdiDoorSliding} size={1} />
-                )}
-              </>
-            </div>
-          </>
-        )}
-      </>
-    );
-  }
+      .catch(err => {
+        console.error('DoorSensor fetch failed:', err);
+        setLoading(false);
+      });
+  }, [room]);
+
+  if (loading) return <Loader size="xs" color="teal" />;
+
+  const isOpen = data.contact === 'false';
+
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <Text size="sm" fw={500} c="dimmed">{data.roomName}</Text>
+      <Badge 
+        variant="light" 
+        color={isOpen ? 'red' : 'green'} 
+        leftSection={<Icon path={isOpen ? mdiDoorSlidingOpen : mdiDoorSliding} size={0.7} color="currentColor" />}
+        radius="sm"
+      >
+        {isOpen ? 'Open' : 'Closed'}
+      </Badge>
+    </Group>
+  );
 }
-export default DoorSensors;

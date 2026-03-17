@@ -1,18 +1,20 @@
-import './switch.css';
 import React, { useState, useEffect } from 'react';
+import { 
+  Paper, 
+  Group, 
+  ActionIcon, 
+  Text, 
+  rem,
+  useMantineTheme,
+  Stack
+} from '@mantine/core';
 import Icon from '@mdi/react';
-import IconButton from '@mui/material/IconButton';
 import { mdiCurtains, mdiCurtainsClosed, mdiPause } from '@mdi/js';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-
-const gateway = 'http://192.168.88.122:1880';
+import { gateway } from '../../../constants/deviceMap';
 
 const Curtain = ({ sVal, sID, sName, stateHandler }) => {
   const [alignment, setAlignment] = useState(sVal);
 
-  // Sync state if props change (from polling)
   useEffect(() => {
     setAlignment(sVal);
   }, [sVal]);
@@ -23,44 +25,45 @@ const Curtain = ({ sVal, sID, sName, stateHandler }) => {
     fetch(`${gateway}/${sID}/${val}`).then((response) => response.json());
   };
 
-  const getButtonStyle = (val) => {
-    const isActive = alignment === val;
-    return {
-      bgcolor: isActive ? 'primary.main' : 'action.selected',
-      color: isActive ? 'primary.contrastText' : 'text.disabled',
-      '&:hover': { bgcolor: isActive ? 'primary.dark' : 'action.hover' },
-      transition: 'all 0.2s',
-      width: 48,
-      height: 48,
-    };
-  };
+  const getVariant = (val) => alignment === val ? 'filled' : 'light';
 
   return (
-    <Card sx={{ mb: 1, borderRadius: '24px', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)', display: 'inline-block' }}>
-      <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, padding: '16px !important', bgcolor: 'background.paper' }}>
-        
-        {/* Top Side: Actions */}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-          <IconButton onClick={() => handleAction('OPEN')} sx={getButtonStyle('OPEN')} title="Open">
+    <Paper shadow="sm" radius="lg" p="md" withBorder style={{ display: 'inline-block' }}>
+      <Stack align="center" gap="sm">
+        <Group gap="xs" wrap="nowrap">
+          <ActionIcon 
+            variant={getVariant('OPEN')} 
+            color="teal" 
+            size={48} 
+            radius="xl" 
+            onClick={() => handleAction('OPEN')}
+          >
             <Icon path={mdiCurtains} size={1.2} />
-          </IconButton>
+          </ActionIcon>
           
-          <IconButton onClick={() => handleAction('STOP')} sx={getButtonStyle('STOP')} title="Stop">
+          <ActionIcon 
+            variant={getVariant('STOP')} 
+            color="gray" 
+            size={48} 
+            radius="xl" 
+            onClick={() => handleAction('STOP')}
+          >
             <Icon path={mdiPause} size={1.2} />
-          </IconButton>
+          </ActionIcon>
           
-          <IconButton onClick={() => handleAction('CLOSE')} sx={getButtonStyle('CLOSE')} title="Close">
+          <ActionIcon 
+            variant={getVariant('CLOSE')} 
+            color="teal" 
+            size={48} 
+            radius="xl" 
+            onClick={() => handleAction('CLOSE')}
+          >
             <Icon path={mdiCurtainsClosed} size={1.2} />
-          </IconButton>
-        </div>
-
-        {/* Bottom Side: Name */}
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary', textAlign: 'center' }}>
-          {sName}
-        </Typography>
-
-      </CardContent>
-    </Card>
+          </ActionIcon>
+        </Group>
+        <Text size="xs" fw={700} tt="uppercase" ls="0.5px">{sName}</Text>
+      </Stack>
+    </Paper>
   );
 };
 

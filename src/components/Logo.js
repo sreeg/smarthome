@@ -1,17 +1,20 @@
-import PropTypes from 'prop-types';
-// material
-import { Box } from '@mui/material';
+import React from 'react';
+import { Box, Image } from '@mantine/core';
 import { useThemeMode } from '../theme';
 
-// ----------------------------------------------------------------------
-
-Logo.propTypes = {
-  sx: PropTypes.object
-};
-
-export default function Logo({ sx }) {
+export default function Logo({ width = 40, height = 40, style }) {
   const { mode } = useThemeMode();
   const filter = mode === 'dark' ? 'none' : 'invert(1)';
   
-  return <Box component="img" src="/static/shree.png" sx={{ width: 40, height: 40, filter, ...sx }} />;
+  return (
+    <Box style={{ width, height, ...style }}>
+      <Image 
+        src="/static/shree.png" 
+        w={width} 
+        h={height} 
+        style={{ filter }} 
+        fallbackSrc="https://placehold.co/40x40?text=S"
+      />
+    </Box>
+  );
 }

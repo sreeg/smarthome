@@ -139,11 +139,9 @@ body[data-theme='light'] header {
 /* Extended Theme Styles */
 body[data-theme='ocean'] { background-color: #EAF7FF; color: #06283D; }
 body[data-theme='forest'] { background-color: #F1F8E9; color: #081C15; }
-body[data-theme='sunset'] { background-color: #FFF8E1; color: #3D405B; }
 
 body[data-theme='ocean'] header { background-color: #F4FBFF !important; color: #06283D; }
 body[data-theme='forest'] header { background-color: #E8F5E9 !important; color: #081C15; }
-body[data-theme='sunset'] header { background-color: #FFF3E0 !important; color: #3D405B; }
 
 body[data-theme='ocean'] .simplebar-wrapper,
 body[data-theme='ocean'] .MuiDrawer-paper { background: #F4FBFF !important; color: #06283D !important; }
@@ -151,13 +149,84 @@ body[data-theme='ocean'] .MuiDrawer-paper { background: #F4FBFF !important; colo
 body[data-theme='forest'] .simplebar-wrapper,
 body[data-theme='forest'] .MuiDrawer-paper { background: #E8F5E9 !important; color: #081C15 !important; }
 
-body[data-theme='sunset'] .simplebar-wrapper,
-body[data-theme='sunset'] .MuiDrawer-paper { background: #FFF3E0 !important; color: #3D405B !important; }
-
 body[data-theme='ocean'] .MuiAccordion-root { background-color: #F4FBFF; color: #06283D; }
 body[data-theme='forest'] .MuiAccordion-root { background-color: #E8F5E9; color: #081C15; }
-body[data-theme='sunset'] .MuiAccordion-root { background-color: #FFF3E0; color: #3D405B; }
 
 body[data-theme='ocean'] .dark-dialog .MuiDialog-container .MuiPaper-root { background: #F4FBFF; color: #06283D; }
 body[data-theme='forest'] .dark-dialog .MuiDialog-container .MuiPaper-root { background: #E8F5E9; color: #081C15; }
-body[data-theme='sunset'] .dark-dialog .MuiDialog-container .MuiPaper-root { background: #FFF3E0; color: #3D405B; }
+
+/* Mantine Migration Tweaks */
+.mantine-AppShell-main {
+  transition: padding 300ms ease;
+}
+
+@keyframes fan-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fan-spin {
+  animation: fan-spin 2s linear infinite;
+}
+
+.glass-container {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.4)) !important;
+  backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  -webkit-backdrop-filter: var(--glass-blur, blur(12px)) !important;
+  border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.1)) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Control Center Specifics */
+body[data-portal='control'] .glass-container {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: 1px solid #ff9800 !important;
+  box-shadow: 0 0 15px rgba(255, 152, 0, 0.2) !important;
+}
+
+body[data-portal='control'] .mantine-AppShell-main {
+  background-image: 
+    linear-gradient(rgba(255, 152, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 152, 0, 0.05) 1px, transparent 1px) !important;
+  background-size: 50px 50px !important;
+}
+
+body[data-portal='control'] .mantine-Text, 
+body[data-portal='control'] .mantine-Title {
+  font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+}
+
+.mini-sidebar {
+  transition: width 300ms cubic-bezier(0.2, 0, 0, 1) !important;
+  overflow: hidden;
+}
+
+.mini-sidebar .mantine-NavLink-label {
+  opacity: 0;
+  transition: opacity 200ms ease;
+  white-space: nowrap;
+}
+
+.mini-sidebar:hover .mantine-NavLink-label {
+  opacity: 1;
+}
+
+.bento-card {
+  border-radius: var(--mantine-radius-bento) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+body[data-portal='classic'] .bento-card {
+  background: white !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+body[data-theme='dark'][data-portal='classic'] .bento-card {
+  background: #2A2D34 !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--mantine-shadow-xl) !important;
+}

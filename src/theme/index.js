@@ -12,16 +12,31 @@ import shadows, { customShadows } from './shadows';
 
 // ----------------------------------------------------------------------
 
+import { MantineProvider, createTheme as createMantineTheme } from '@mantine/core';
+
+// ----------------------------------------------------------------------
+
 const STORAGE_KEY = 'theme-mode';
-const AVAILABLE_MODES = ['dark', 'light', 'ocean', 'forest', 'sunset'];
+const PORTAL_STORAGE_KEY = 'portal-template';
+const AVAILABLE_MODES = ['dark', 'light', 'ocean', 'forest'];
+const AVAILABLE_TEMPLATES = ['classic', 'bento', 'control'];
 
 const ThemeModeContext = createContext({
   mode: 'dark',
   toggleThemeMode: () => {}
 });
 
+const PortalTemplateContext = createContext({
+  template: 'bento',
+  setTemplate: () => {}
+});
+
 export function useThemeMode() {
   return useContext(ThemeModeContext);
+}
+
+export function usePortalTemplate() {
+  return useContext(PortalTemplateContext);
 }
 
 ThemeConfig.propTypes = {
@@ -33,9 +48,16 @@ export default function ThemeConfig({ children }) {
     if (typeof window === 'undefined') {
       return 'dark';
     }
-
     const savedMode = localStorage.getItem(STORAGE_KEY);
     return AVAILABLE_MODES.includes(savedMode) ? savedMode : 'dark';
+  });
+
+  const [template, setTemplateState] = useState(() => {
+    if (typeof window === 'undefined') {
+      return 'bento';
+    }
+    const savedTemplate = localStorage.getItem(PORTAL_STORAGE_KEY);
+    return AVAILABLE_TEMPLATES.includes(savedTemplate) ? savedTemplate : 'bento';
   });
 
   const toggleThemeMode = () => {
@@ -49,11 +71,21 @@ export default function ThemeConfig({ children }) {
     });
   };
 
+  const setTemplate = (newTemplate) => {
+    if (AVAILABLE_TEMPLATES.includes(newTemplate)) {
+      setTemplateState(newTemplate);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PORTAL_STORAGE_KEY, newTemplate);
+      }
+    }
+  };
+
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.body.setAttribute('data-theme', mode);
+      document.body.setAttribute('data-portal', template);
     }
-  }, [mode]);
+  }, [mode, template]);
 
   const themeOptions = useMemo(
     () => {
@@ -92,15 +124,6 @@ export default function ThemeConfig({ children }) {
             background: { paper: '#E8F5E9', default: '#F1F8E9', neutral: '#C8E6C9' }
           };
         }
-        if (mode === 'sunset') {
-          return {
-            ...lightPalette,
-            primary: { ...palette.primary, main: '#E07A5F' },
-            secondary: { ...palette.secondary, main: '#E9C46A' },
-            text: { primary: '#264653', secondary: '#2A9D8F', disabled: '#8AB17D' },
-            background: { paper: '#FFEDD8', default: '#FFF3E0', neutral: '#FFE0B2' }
-          };
-        }
         
         return lightPalette;
       };
@@ -119,13 +142,52 @@ export default function ThemeConfig({ children }) {
   const theme = createTheme(themeOptions);
   theme.components = componentsOverride(theme);
 
+  // Maintain separate Mantine theme configuration
+  const mantineTheme = createMantineTheme({
+    primaryColor: template === 'control' ? 'orange' : (mode === 'ocean' ? 'blue' : mode === 'forest' ? 'green' : 'teal'),
+    colorScheme: mode === 'dark' ? 'dark' : 'light',
+    fontFamily: 'Roboto, sans-serif',
+    radius: {
+        xs: '4px',
+        sm: '8px',
+        md: '12px',
+        lg: '16px',
+        xl: '24px',
+        bento: template === 'classic' ? '12px' : (template === 'control' ? '8px' : '32px'),
+      },
+    other: {
+      glassBackground: (template === 'classic') ? 'transparent' : (template === 'control' ? 'rgba(0,0,0,0.8)' : (mode === 'dark' 
+        ? 'rgba(42, 45, 52, 0.4)' 
+        : mode === 'ocean' 
+          ? 'rgba(234, 247, 255, 0.6)' 
+          : mode === 'forest' 
+            ? 'rgba(241, 248, 233, 0.6)' 
+            : 'rgba(255, 255, 255, 0.6)')),
+      glassBlur: (template === 'classic') ? 'none' : 'blur(12px)',
+      glassBorder: (template === 'classic') ? 'none' : (template === 'control' ? '1px solid #ff9800' : '1px solid rgba(255, 255, 255, 0.1)'),
+    }
+  });
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--glass-bg', mantineTheme.other.glassBackground);
+      root.style.setProperty('--glass-blur', mantineTheme.other.glassBlur);
+      root.style.setProperty('--glass-border', mantineTheme.other.glassBorder);
+    }
+  }, [mantineTheme]);
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeModeContext.Provider value={{ mode, toggleThemeMode }}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+        <PortalTemplateContext.Provider value={{ template, setTemplate }}>
+          <MantineProvider theme={mantineTheme} defaultColorScheme={mode === 'dark' ? 'dark' : 'light'}>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              {children}
+            </ThemeProvider>
+          </MantineProvider>
+        </PortalTemplateContext.Provider>
       </ThemeModeContext.Provider>
     </StyledEngineProvider>
   );

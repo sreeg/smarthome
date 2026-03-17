@@ -1,37 +1,62 @@
-import './switch.css';
 import React from 'react';
+import { 
+  UnstyledButton, 
+  Paper, 
+  Text, 
+  Stack, 
+  rem,
+  useMantineTheme
+} from '@mantine/core';
 import Icon from '@mdi/react';
-import Button from '@mui/material/Button';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class Switch extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      style: { background: 'red', color: 'white' }
-    };
-  }
-  handleSwitch = (e) => {
-    var onOff = e.target.checked ? 'on' : 'off';
-    this.props.stateHandler(e.target.name, onOff.toUpperCase());
-    fetch(gateway + '/' + e.target.name + '/' + onOff).then((response) => response.json());
+const Switch = ({ sVal, sID, sIcon, sName, stateHandler }) => {
+  const theme = useMantineTheme();
+  const isOn = sVal === 'ON';
+
+  const handleToggle = () => {
+    const newState = !isOn;
+    const apiVal = newState ? 'on' : 'off';
+    const stateVal = newState ? 'ON' : 'OFF';
+    
+    if (stateHandler) stateHandler(sID, stateVal);
+    fetch(`${gateway}/${sID}/${apiVal}`).then((response) => response.json());
   };
 
-  render() {
-    const { style } = this.state;
-    let { sVal, sID, sIcon, sName, stateHandler } = this.props;
+  return (
+    <Paper shadow="sm" radius="lg" withBorder style={{ 
+      overflow: 'hidden',
+      transition: 'all 0.2s ease',
+      border: isOn ? `1px solid var(--mantine-color-teal-filled)` : undefined
+    }}>
+      <UnstyledButton
+        onClick={handleToggle}
+        p="md"
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: rem(8),
+          backgroundColor: isOn ? 'var(--mantine-color-teal-light)' : 'transparent',
+          color: isOn ? 'var(--mantine-color-teal-9)' : 'inherit',
+          '&:hover': {
+            backgroundColor: isOn ? 'var(--mantine-color-teal-light-hover)' : 'var(--mantine-color-gray-0)',
+          }
+        }}
+      >
+        <Icon path={sIcon} size={1.5} color="currentColor" />
+        <Stack gap={2} align="center">
+          <Text size="xs" fw={700} tt="uppercase" ls="0.5px">
+            {sName}
+          </Text>
+          <Text size="xs" c="dimmed" fw={500}>
+            {isOn ? 'Active' : 'Off'}
+          </Text>
+        </Stack>
+      </UnstyledButton>
+    </Paper>
+  );
+};
 
-    return (
-      <Button className={sVal === 'ON' ? 'switch-on' : 'switch-off'} variant={sVal === 'ON' ? 'contained' : 'outlined'} size="large" color="secondary" disableFocusRipple={true}>
-        <input type="checkbox" checked={sVal === 'ON' ? true : false} onChange={this.handleSwitch} id={sID} name={sID} />
-        <div className="content">
-          <label htmlFor={sID}>
-            <Icon path={sIcon} size={2} />
-            <div>{sName}</div>
-          </label>
-        </div>
-      </Button>
-    );
-  }
-}
 export default Switch;

@@ -1,50 +1,24 @@
-import './switch.css';
 import React, { useState } from 'react';
-import { mdiCeilingFan } from '@mdi/js';
+import { 
+  Paper, 
+  Text, 
+  Group, 
+  Stack, 
+  ActionIcon, 
+  Slider, 
+  rem,
+  useMantineTheme
+} from '@mantine/core';
 import Icon from '@mdi/react';
-import Slider from '@mui/material/Slider';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
-import { styled } from '@mui/material/styles';
-
-const gateway = 'http://192.168.88.122:1880';
-
-// Custom Fan Speed Slider dynamic to Theme
-const FanSpeedSlider = styled(Slider)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  height: 8,
-  padding: '8px 0',
-  '& .MuiSlider-track': {
-    border: 'none',
-    background: `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  },
-  '& .MuiSlider-thumb': {
-    height: 16,
-    width: 16,
-    backgroundColor: '#fff',
-    border: `2px solid ${theme.palette.primary.main}`,
-    '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-      boxShadow: 'inherit',
-    },
-  },
-  '& .MuiSlider-rail': {
-    opacity: 0.5,
-    backgroundColor: theme.palette.action.disabledBackground,
-  },
-}));
+import { mdiCeilingFan } from '@mdi/js';
+import { gateway } from '../../../constants/deviceMap';
 
 const Fan = ({ sVal, sFval, sID, sIDFS, sName, stateHandler }) => {
-
+  const theme = useMantineTheme();
   const [fanSpeed, setFanSpeed] = useState(sFval * 20 || 0);
   const [isOn, setIsOn] = useState(sVal === 'ON');
 
-  const handleSpeedChange = (e, v) => {
-    setFanSpeed(v);
-  };
-
-  const handleSpeedCommit = (e, v) => {
+  const handleSpeedCommit = (v) => {
     fetch(`${gateway}/${sIDFS}/${v}`).then((response) => response.json());
     if (stateHandler) stateHandler(sIDFS, Math.round(v / 20));
   };
@@ -58,51 +32,50 @@ const Fan = ({ sVal, sFval, sID, sIDFS, sName, stateHandler }) => {
   };
 
   return (
-    <Card sx={{ minWidth: 280, mb: 1, width: '100%', borderRadius: '24px', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)' }}>
-      <CardContent sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 2, padding: '16px !important', bgcolor: 'background.paper' }}>
-        
-        {/* Compact Toggle Button */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '48px' }}>
-          <IconButton 
+    <Paper shadow="sm" radius="lg" p="md" withBorder style={{ 
+      transition: 'all 0.3s ease',
+      border: isOn ? `1px solid var(--mantine-color-teal-filled)` : undefined
+    }}>
+      <Group gap="lg" wrap="nowrap">
+        <Stack align="center" gap={4} style={{ minWidth: rem(60) }}>
+          <ActionIcon 
+            variant={isOn ? 'filled' : 'light'} 
+            color="teal" 
+            size={54} 
+            radius="xl"
             onClick={handleToggle}
-            sx={{ 
-              bgcolor: isOn ? 'primary.main' : 'action.selected',
-              color: isOn ? 'primary.contrastText' : 'text.disabled',
-              '&:hover': { bgcolor: isOn ? 'primary.dark' : 'action.hover' },
-              transition: 'all 0.2s',
-              width: 48,
-              height: 48,
-              mb: 0.5
-            }}
+            className={isOn ? 'fan-spin' : ''}
           >
-            <Icon path={mdiCeilingFan} size={1.2} />
-          </IconButton>
-          <Typography variant="caption" sx={{ fontWeight: 500, color: 'text.secondary', fontSize: '0.65rem' }}>
+            <Icon path={mdiCeilingFan} size={1.3} />
+          </ActionIcon>
+          <Text size="xs" fw={700} c="dimmed" style={{ textAlign: 'center' }}>
             {sName}
-          </Typography>
-        </div>
+          </Text>
+        </Stack>
 
-        {/* Speed Slider Section */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Speed
-            </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-              {fanSpeed}%
-            </Typography>
-          </div>
-          <FanSpeedSlider 
-            value={fanSpeed} 
-            min={0} 
-            max={100} 
-            onChange={handleSpeedChange} 
-            onChangeCommitted={handleSpeedCommit} 
+        <Stack gap={4} style={{ flex: 1 }}>
+          <Group justify="space-between">
+            <Text size="xs" fw={600} c="dimmed">Speed</Text>
+            <Text size="xs" fw={700}>{fanSpeed}%</Text>
+          </Group>
+          <Slider
+            value={fanSpeed}
+            onChange={setFanSpeed}
+            onChangeEnd={handleSpeedCommit}
+            min={0}
+            max={100}
+            step={20}
+            color="teal"
+            size="sm"
+            label={null}
+            styles={{
+              thumb: { transition: 'transform 150ms ease' },
+              track: { backgroundColor: 'var(--mantine-color-gray-2)' }
+            }}
           />
-        </div>
-
-      </CardContent>
-    </Card>
+        </Stack>
+      </Group>
+    </Paper>
   );
 };
 

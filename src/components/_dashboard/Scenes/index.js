@@ -1,85 +1,74 @@
 import React from 'react';
+import { 
+  Grid, 
+  UnstyledButton, 
+  Paper, 
+  Text, 
+  Stack, 
+  rem,
+  useMantineTheme
+} from '@mantine/core';
 import { mdiMovieOpen } from '@mdi/js';
 import { GiExitDoor, GiEntryDoor, GiCandleFlame } from 'react-icons/gi';
 import { MdBedtime } from 'react-icons/md';
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
 import Icon from '@mdi/react';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-const ICON_HEIGHT = 42;
+const ICON_SIZE = rem(32);
 
-class Scenes extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-  handleMovieMode = (e) => {
-    fetch(gateway + '/movietime/').then((response) => response.json());
+export default function Scenes() {
+  const theme = useMantineTheme();
+
+  const handleAction = (endpoint) => {
+    fetch(`${gateway}${endpoint}`).then((response) => response.json());
   };
 
-  handleCozyMode = (e) => {
-    fetch(gateway + '/dinningcozy/').then((response) => response.json());
-  };
-  handleBedtime = (e) => {
-    fetch(gateway + '/bedtime/').then((response) => response.json());
-  };
-  render() {
-    return (
-      <>
-        <Grid container spacing={2}>
-          <Grid item>
-            <Button className="scene-switch" variant="outlined" onClick={this.handleMovieMode} size="large" color="secondary" disableFocusRipple={true}>
-              <div className="content">
-                <label>
-                  <Icon path={mdiMovieOpen} size={1.5} />
-                  <div>Movie mode</div>
-                </label>
-              </div>
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button className="scene-switch" variant="outlined" onClick={this.handleCozyMode} size="large" color="secondary" disableFocusRipple={true}>
-              <div className="content">
-                <label>
-                  <GiCandleFlame size={ICON_HEIGHT} />
-                  <div>Cozy mode</div>
-                </label>
-              </div>
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button className="scene-switch" variant="outlined" onClick={this.handleBedtime} size="large" color="secondary" disableFocusRipple={true}>
-              <div className="content">
-                <label>
-                  <MdBedtime size={ICON_HEIGHT} />
-                  <div>Bedtime</div>
-                </label>
-              </div>
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button className="scene-switch" variant="outlined" onClick={this.handleCozyMode} size="large" color="secondary" disableFocusRipple={true}>
-              <div className="content">
-                <label>
-                  <GiEntryDoor size={ICON_HEIGHT} />
-                  <div>Home entry</div>
-                </label>
-              </div>
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button className="scene-switch" variant="outlined" onClick={this.handleCozyMode} size="large" color="secondary" disableFocusRipple={true}>
-              <div className="content">
-                <label>
-                  <GiExitDoor size={ICON_HEIGHT} />
-                  <div>Home exit</div>
-                </label>
-              </div>
-            </Button>
-          </Grid>
-        </Grid>
-      </>
-    );
-  }
+  const sceneButtons = [
+    { title: 'Movie mode', icon: <Icon path={mdiMovieOpen} size={1.2} />, endpoint: '/movietime/' },
+    { title: 'Cozy mode', icon: <GiCandleFlame size={ICON_SIZE} />, endpoint: '/dinningcozy/' },
+    { title: 'Bedtime', icon: <MdBedtime size={ICON_SIZE} />, endpoint: '/bedtime/' },
+    { title: 'Home entry', icon: <GiEntryDoor size={ICON_SIZE} />, endpoint: '/dinningcozy/' }, // assuming same for now as original
+    { title: 'Home exit', icon: <GiExitDoor size={ICON_SIZE} />, endpoint: '/dinningcozy/' }  // assuming same for now as original
+  ];
+
+  return (
+    <Box>
+      <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Scenes</Text>
+      <Grid gutter="md">
+        {sceneButtons.map((scene, index) => (
+          <Grid.Col key={index} span={{ base: 6, sm: 4, lg: 2.4 }}>
+            <Paper shadow="sm" radius="md" withBorder style={{ overflow: 'hidden' }}>
+              <UnstyledButton
+                onClick={() => handleAction(scene.endpoint)}
+                p="md"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: rem(8),
+                  transition: 'all 0.2s ease',
+                  backgroundColor: 'var(--mantine-color-gray-0)',
+                  '&:hover': {
+                    backgroundColor: 'var(--mantine-color-gray-1)',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                <div style={{ color: 'var(--mantine-color-orange-6)' }}>
+                  {scene.icon}
+                </div>
+                <Text size="xs" fw={600} style={{ textAlign: 'center' }}>
+                  {scene.title}
+                </Text>
+              </UnstyledButton>
+            </Paper>
+          </Grid.Col>
+        ))}
+      </Grid>
+    </Box>
+  );
 }
-export default Scenes;
+
+// Helper to make it work since I used Box in return but didn't import it in this specific block
+import { Box } from '@mantine/core';

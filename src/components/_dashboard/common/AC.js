@@ -1,19 +1,20 @@
-import './ac.css';
 import React, { useState, useEffect } from 'react';
+import { 
+  Paper, 
+  Group, 
+  ActionIcon, 
+  Text, 
+  rem,
+  useMantineTheme
+} from '@mantine/core';
 import Icon from '@mdi/react';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import { mdiAirConditioner, mdiMinus, mdiPlus, mdiPower } from '@mdi/js';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-
-const gateway = 'http://192.168.88.122:1880';
+import { gateway } from '../../../constants/deviceMap';
 
 const AC = ({ sVal, sID, sName, stateHandler }) => {
   const [onoff, setOnoff] = useState(sVal === 'on' || sVal === 'ON' ? 'ON' : 'OFF');
   const [temp, setTemp] = useState(24);
 
-  // Keep state synced with props if polling updates them
   useEffect(() => {
     setOnoff(sVal === 'on' || sVal === 'ON' ? 'ON' : 'OFF');
   }, [sVal]);
@@ -37,46 +38,45 @@ const AC = ({ sVal, sID, sName, stateHandler }) => {
   const powerActive = onoff === 'ON';
 
   return (
-    <Card sx={{ minWidth: 280, mb: 1, borderRadius: '24px', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)', display: 'inline-block' }}>
-      <CardContent sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '16px !important', bgcolor: 'background.paper' }}>
-        
-        {/* Left Side: Icon */}
-        <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
-          <Icon path={mdiAirConditioner} size={1.5} style={{ color: 'var(--mui-palette-text-primary, #000)' }} />
-        </div>
+    <Paper shadow="sm" radius="lg" p="md" withBorder style={{ display: 'inline-block' }}>
+      <Group gap="xl" wrap="nowrap">
+        <Icon path={mdiAirConditioner} size={1.5} color="var(--mantine-color-teal-6)" />
 
-        {/* Center: Temperature Stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '24px', marginRight: '24px' }}>
-          <IconButton onClick={() => handleTempChange(-1)} disabled={temp <= 18} size="small" sx={{ bgcolor: 'action.hover' }}>
+        <Group gap="md" wrap="nowrap">
+          <ActionIcon 
+            variant="light" 
+            color="gray" 
+            onClick={() => handleTempChange(-1)} 
+            disabled={temp <= 18}
+          >
             <Icon path={mdiMinus} size={0.8} />
-          </IconButton>
+          </ActionIcon>
           
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary', minWidth: '32px', textAlign: 'center' }}>
+          <Text size="lg" fw={800} style={{ minWidth: rem(40), textAlign: 'center' }}>
             {temp}°
-          </Typography>
+          </Text>
           
-          <IconButton onClick={() => handleTempChange(1)} disabled={temp >= 26} size="small" sx={{ bgcolor: 'action.hover' }}>
+          <ActionIcon 
+            variant="light" 
+            color="gray" 
+            onClick={() => handleTempChange(1)} 
+            disabled={temp >= 26}
+          >
             <Icon path={mdiPlus} size={0.8} />
-          </IconButton>
-        </div>
+          </ActionIcon>
+        </Group>
 
-        {/* Right Side: Power Toggle */}
-        <IconButton 
+        <ActionIcon 
+          size={48} 
+          radius="xl" 
+          variant={powerActive ? 'filled' : 'light'} 
+          color="teal"
           onClick={handlePowerToggle}
-          sx={{
-            bgcolor: powerActive ? 'primary.main' : 'action.selected',
-            color: powerActive ? 'primary.contrastText' : 'text.disabled',
-            '&:hover': { bgcolor: powerActive ? 'primary.dark' : 'action.hover' },
-            width: 48,
-            height: 48,
-            transition: 'all 0.2s'
-          }}
         >
           <Icon path={mdiPower} size={1.2} />
-        </IconButton>
-
-      </CardContent>
-    </Card>
+        </ActionIcon>
+      </Group>
+    </Paper>
   );
 };
 

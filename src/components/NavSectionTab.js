@@ -1,181 +1,50 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
-import { Icon } from '@iconify/react';
-import { NavLink as RouterLink, matchPath, useLocation } from 'react-router-dom';
-import arrowIosForwardFill from '@iconify/icons-eva/arrow-ios-forward-fill';
-import arrowIosDownwardFill from '@iconify/icons-eva/arrow-ios-downward-fill';
-// material
-import { alpha, useTheme, styled } from '@mui/material/styles';
-import { Box, List, Collapse, ListItemText, ListItemIcon, ListItemButton } from '@mui/material';
-import Tabs, { tabsClasses } from '@mui/material/Tabs';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  Group, 
+  ScrollArea, 
+  UnstyledButton, 
+  Text, 
+  rem,
+  useMantineTheme
+} from '@mantine/core';
 
-// ----------------------------------------------------------------------
-
-const ListItemStyle = styled((props) => <ListItemButton disableGutters {...props} />)(({ theme }) => ({
-  ...theme.typography.body2,
-  height: 48,
-  position: 'relative',
-  textTransform: 'capitalize',
-  paddingLeft: theme.spacing(5),
-  paddingRight: theme.spacing(2.5),
-  color: theme.palette.text.secondary,
-  '&:before': {
-    top: 0,
-    right: 0,
-    width: 3,
-    bottom: 0,
-    content: "''",
-    display: 'none',
-    position: 'absolute',
-    borderTopLeftRadius: 4,
-    borderBottomLeftRadius: 4,
-    backgroundColor: theme.palette.primary.main
-  }
-}));
-
-const ListItemIconStyle = styled(ListItemIcon)({
-  width: 22,
-  height: 22,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center'
-});
-
-// ----------------------------------------------------------------------
-
-NavItem.propTypes = {
-  item: PropTypes.object,
-  active: PropTypes.func
-};
-
-function NavItem({ item, active }) {
-  const theme = useTheme();
-  const isActiveRoot = active(item.path);
-  const { title, path, icon, info, children } = item;
-  const [open, setOpen] = useState(isActiveRoot);
-
-  const handleOpen = () => {
-    setOpen((prev) => !prev);
-  };
-
-  const activeRootStyle = {
-    color: 'secondary.main',
-    fontWeight: 'fontWeightMedium',
-    bgcolor: alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
-    '&:before': { display: 'block' }
-  };
-
-  const activeSubStyle = {
-    color: 'text.secondary',
-    fontWeight: 'fontWeightMedium'
-  };
-
-  if (children) {
-    return (
-      <>
-        <ListItemStyle
-          onClick={handleOpen}
-          sx={{
-            ...(isActiveRoot && activeRootStyle)
-          }}
-        >
-          <ListItemIconStyle>{icon && icon}</ListItemIconStyle>
-          <ListItemText disableTypography primary={title} />
-          {info && info}
-          <Box component={Icon} icon={open ? arrowIosDownwardFill : arrowIosForwardFill} sx={{ width: 16, height: 16, ml: 1 }} />
-        </ListItemStyle>
-
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {children.map((item) => {
-              const { title, path } = item;
-              const isActiveSub = active(path);
-
-              return (
-                <ListItemStyle
-                  key={title}
-                  component={RouterLink}
-                  to={path}
-                  sx={{
-                    ...(isActiveSub && activeSubStyle)
-                  }}
-                >
-                  <ListItemIconStyle>
-                    <Box
-                      component="span"
-                      sx={{
-                        width: 4,
-                        height: 4,
-                        display: 'flex',
-                        borderRadius: '50%',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'text.disabled',
-                        transition: (theme) => theme.transitions.create('transform'),
-                        ...(isActiveSub && {
-                          transform: 'scale(2)',
-                          bgcolor: 'primary.main'
-                        })
-                      }}
-                    />
-                  </ListItemIconStyle>
-                  <ListItemText disableTypography primary={title} />
-                </ListItemStyle>
-              );
-            })}
-          </List>
-        </Collapse>
-      </>
-    );
-  }
+export default function NavSectionTab({ navConfig }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useMantineTheme();
 
   return (
-    <ListItemStyle
-      component={RouterLink}
-      to={path}
-      sx={{
-        ...(isActiveRoot && activeRootStyle)
-      }}
-    >
-      <ListItemIconStyle>{icon && icon}</ListItemIconStyle>
-      <ListItemText disableTypography primary={title} />
-      {info && info}
-    </ListItemStyle>
-  );
-}
-
-NavSection.propTypes = {
-  navConfig: PropTypes.array
-};
-
-export default function NavSection({ navConfig, ...other }) {
-  const { pathname } = useLocation();
-  const match = (path) => (path ? !!matchPath({ path, end: false }, pathname) : false);
-
-  return (
-    <Box {...other}>
-      <List disablePadding>
-        <Tabs
-          className='nav-tabs'
-          aria-label="nav tabs example"
-          variant="scrollable"
-          scrollButtons
-          aria-label="visible arrows tabs example"
-          sx={{
-            [`& .${tabsClasses.scrollButtons}`]: {
-              '&.Mui-disabled': { opacity: 0.3 }
-            }
-          }}
-        >
-          {navConfig.map((item) => (
-            <NavItem key={item.title} item={item} active={match} />
-          ))}
-
-        </Tabs>
-        {/* {navConfig.map((item) => (
-          <NavItem key={item.title} item={item} active={match} />
-        ))} */}
-      </List>
-    </Box>
+    <ScrollArea scrollbars="x" type="never" pb="sm">
+      <Group gap="sm" wrap="nowrap">
+        {navConfig.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <UnstyledButton
+              key={item.title}
+              onClick={() => navigate(item.path)}
+              px="md"
+              py="xs"
+              style={{
+                borderRadius: theme.radius.md,
+                backgroundColor: isActive ? 'var(--mantine-color-teal-filled)' : 'var(--mantine-color-gray-light)',
+                color: isActive ? 'var(--mantine-color-white)' : 'inherit',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  backgroundColor: isActive ? 'var(--mantine-color-teal-filled)' : 'var(--mantine-color-gray-1)',
+                }
+              }}
+            >
+              <Group gap="xs" wrap="nowrap">
+                {item.icon}
+                <Text size="sm" fw={600} style={{ textTransform: 'capitalize' }}>
+                  {item.title}
+                </Text>
+              </Group>
+            </UnstyledButton>
+          );
+        })}
+      </Group>
+    </ScrollArea>
   );
 }

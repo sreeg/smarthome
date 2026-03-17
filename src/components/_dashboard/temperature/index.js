@@ -1,58 +1,48 @@
-import React from 'react';
-import { decodeHtml } from '../../../utils/commons';
-import '@fontsource/roboto/300.css';
-import '@fontsource/roboto/400.css';
-import '@fontsource/roboto/500.css';
-import '@fontsource/roboto/700.css';
-import 'react-circular-progressbar/dist/styles.css';
+import React, { useState, useEffect } from 'react';
+import { Group, Text, Loader, rem } from '@mantine/core';
 import Icon from '@mdi/react';
 import { mdiThermometer, mdiWaterPercent } from '@mdi/js';
+import { decodeHtml } from '../../../utils/commons';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class Temperature extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      temperature: 'OFF',
-      humidity: 'OFF'
-    };
-  }
+export default function Temperature({ room }) {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({ temperature: 'OFF', humidity: 'OFF' });
 
-  componentDidMount() {
-    var that = this;
-    var room = '/livingtemp';
-    if (this.props.room === 'office') {
-      room = '/officetemp';
+  useEffect(() => {
+    let endpoint = '/livingtemp';
+    if (room === 'office') {
+      endpoint = '/officetemp';
     }
-    fetch(gateway + room)
+    
+    fetch(`${gateway}${endpoint}`)
       .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        console.log(data);
-        this.setState({ temperature: data.temperature });
-        this.setState({ humidity: data.humidity });
-        this.setState({ loading: false });
+      .then((rawData) => {
+        const parsedData = JSON.parse(decodeHtml(rawData));
+        setData({
+          temperature: parsedData.temperature,
+          humidity: parsedData.humidity
+        });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Temperature fetch failed:', err);
+        setLoading(false);
       });
-  }
-  render() {
-    var stateHandler = this.stateHandler;
-    return (
-      <>
-        {this.state.loading ? (
-          <div>Loading</div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'row' }} className="content-temparature">
-              <Icon path={mdiThermometer} size={1} />
-              <h1 style={{ fontSize: "16px" }}>{this.state.temperature}°C</h1>
-              <Icon path={mdiWaterPercent} size={1} />
-              <h1 style={{ fontSize: "16px" }}>{this.state.humidity}%</h1>
-            </div>
-          </>
-        )}
-      </>
-    );
-  }
+  }, [room]);
+
+  if (loading) return <Loader size="xs" color="teal" />;
+
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <Group gap={4} wrap="nowrap">
+        <Icon path={mdiThermometer} size={0.8} color="var(--mantine-color-red-filled)" />
+        <Text size="sm" fw={700}>{data.temperature}°C</Text>
+      </Group>
+      <Group gap={4} wrap="nowrap">
+        <Icon path={mdiWaterPercent} size={0.8} color="var(--mantine-color-blue-filled)" />
+        <Text size="sm" fw={700}>{data.humidity}%</Text>
+      </Group>
+    </Group>
+  );
 }
-export default Temperature;

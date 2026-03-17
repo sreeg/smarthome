@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
-import Card from '@mui/material/Card';
+import { Box, Text, Paper, Group, Title, ScrollArea, rgba, useMantineTheme, UnstyledButton } from '@mantine/core';
 import Icon from '@mdi/react';
 import { mdiFan, mdiWaterBoiler, mdiAirConditioner, mdiLightbulbVariant } from '@mdi/js';
 import { decodeHtml } from '../../../utils/commons';
-
 import { deviceMap, gateway } from '../../../constants/deviceMap';
 
-
 const ActiveDevices = () => {
+  const theme = useMantineTheme();
   const [activeDevices, setActiveDevices] = useState([]);
 
   const fetchDeviceStates = async () => {
-    // Unique URLs to fetch
     const uniqueUrls = [...new Set(deviceMap.map(d => d.url))];
     const newActiveDevices = [];
 
@@ -23,11 +20,14 @@ const ActiveDevices = () => {
           const rawData = await response.text();
           const parsedData = JSON.parse(decodeHtml(rawData));
           
-          // Cross-reference data we received with our map
           const devicesOnThisBoard = deviceMap.filter(d => d.url === url);
           devicesOnThisBoard.forEach(device => {
-            if (parsedData[device.key] && (parsedData[device.key].power === 'ON' || parsedData[device.key].power === 1)) {
-              newActiveDevices.push(device);
+            const deviceData = device.key === 'state' ? parsedData : parsedData[device.key];
+            if (deviceData) {
+              const powerState = deviceData.power || deviceData.state || deviceData;
+              if (powerState === 'ON' || powerState === 1 || powerState === 'true' || powerState === true) {
+                newActiveDevices.push(device);
+              }
             }
           });
         } catch (error) {
@@ -40,81 +40,82 @@ const ActiveDevices = () => {
   };
 
   const handleToggleOff = (device) => {
-    // Optimistic UI Update: Remove the device from the current list immediately
     setActiveDevices((prev) => prev.filter((d) => d.id !== device.id));
-
-    // Send the turn-off command to the gateway
     fetch(`${gateway}/${device.id}/off`)
       .then((response) => response.json())
-      .catch((error) => {
-        console.error(`Failed to turn off ${device.name}:`, error);
-        // On failure, the next polling cycle (8s) will naturally restore the chip if it's still ON
-      });
+      .catch((error) => console.error(`Failed to turn off ${device.name}:`, error));
   };
 
   useEffect(() => {
     fetchDeviceStates();
-    // Use an 8 second polling interval due to the sheer volume of 15+ concurrent requests
     const intervalId = setInterval(fetchDeviceStates, 8000); 
     return () => clearInterval(intervalId);
   }, []);
 
   const getIcon = (type) => {
     switch(type) {
-      case 'fan': return <Icon path={mdiFan} size={1} className="fan-spin" color="inherit" />;
-      case 'geyser': return <Icon path={mdiWaterBoiler} size={1} color="inherit" />;
-      case 'ac': return <Icon path={mdiAirConditioner} size={1} color="inherit" />;
-      default: return <Icon path={mdiLightbulbVariant} size={1} color="inherit" />;
+      case 'fan': return <Icon path={mdiFan} size={1} className="fan-spin" color="currentColor" />;
+      case 'geyser': return <Icon path={mdiWaterBoiler} size={1} color="currentColor" />;
+      case 'ac': return <Icon path={mdiAirConditioner} size={1} color="currentColor" />;
+      default: return <Icon path={mdiLightbulbVariant} size={1} color="currentColor" />;
     }
   };
 
   return (
-    <Box sx={{ mb: 4, width: '100%' }}>
-      <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>
+    <Box mb="xl">
+      <Title order={6} mb="sm" c="dimmed" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         Active Appliances
-      </Typography>
+      </Title>
       
       {activeDevices.length === 0 ? (
-         <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+         <Text size="sm" c="dimmed" fs="italic">
            All tracked appliances are currently off.
-         </Typography>
+         </Text>
       ) : (
-        <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: '6px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'action.disabledBackground', borderRadius: '4px' } }}>
+        <Group gap="xs" wrap="wrap">
           {activeDevices.map((device, index) => (
-            <Card 
+            <UnstyledButton
               key={index}
               onClick={() => handleToggleOff(device)}
-              sx={{ 
-                minWidth: 'auto',
-                whiteSpace: 'nowrap',
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: 1.5, 
-                px: 2, 
-                py: 1.25, 
-                borderRadius: '16px', 
-                bgcolor: 'primary.main', // Active state
-                color: 'primary.contrastText', // Active text color
-                boxShadow: '0 4px 12px 0 rgba(0,0,0,0.2)',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '100px',
+                backgroundColor: 'var(--mantine-primary-color-filled)',
+                color: 'var(--mantine-color-white)',
+                boxShadow: theme.shadows.sm,
+                transition: 'all 0.2s ease',
                 cursor: 'pointer',
+                flex: '0 0 auto',
                 '&:hover': {
-                  bgcolor: 'primary.dark',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 16px 0 rgba(0,0,0,0.3)'
+                  transform: 'translateY(-1px)',
+                  filter: 'brightness(1.1)',
                 },
                 '&:active': {
-                  transform: 'scale(0.95)'
+                  transform: 'scale(0.98)',
                 }
               }}
             >
-              {getIcon(device.type)}
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'inherit' }}>
+              <Box style={{ display: 'flex', alignItems: 'center' }}>
+                {getIcon(device.type)}
+              </Box>
+              <Text 
+                size="xs" 
+                fw={700}
+                style={{ 
+                  whiteSpace: 'nowrap',
+                  maxWidth: '120px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
                 {device.name}
-              </Typography>
-            </Card>
+              </Text>
+            </UnstyledButton>
           ))}
-        </Box>
+        </Group>
       )}
     </Box>
   );

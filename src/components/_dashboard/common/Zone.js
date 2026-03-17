@@ -1,72 +1,72 @@
 import './switch.css';
 import './zone.css';
 import React from 'react';
-import Button from '@mui/material/Button';
+import { 
+  UnstyledButton, 
+  Paper, 
+  Text, 
+  Stack, 
+  rem,
+  useMantineTheme,
+  Box
+} from '@mantine/core';
+import { gateway } from '../../../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
-class Switch extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      style: { background: 'red', color: 'white' }
-    };
-  }
-  handleSwitch = (e) => {
-    var onOff = e.target.checked ? 'on' : 'off';
-    console.log(e.target.name + ' is ' + onOff);
-    this.props.stateHandler(e.target.name, onOff.toUpperCase());
-    fetch(gateway + '/' + e.target.name + '/' + onOff).then((response) => response.json());
+const Zone = ({ sVal, zoneClass, sID, sName, stateHandler }) => {
+  const theme = useMantineTheme();
+  const isOn = sVal === 'ON';
+
+  const handleToggle = () => {
+    const newState = !isOn;
+    const apiVal = newState ? 'on' : 'off';
+    const stateVal = newState ? 'ON' : 'OFF';
+    
+    if (stateHandler) stateHandler(sID, stateVal);
+    fetch(`${gateway}/${sID}/${apiVal}`).then((response) => response.json());
   };
 
-  render() {
-    const { style } = this.state;
-    let { sVal, zoneClass, sID, sIcon, sName, stateHandler } = this.props;
+  const isZone33 = zoneClass.includes('zone33');
 
-    return (
-      <Button className={sVal === 'ON' ? 'switch-on' : 'switch-off'} variant={sVal === 'ON' ? 'contained' : 'outlined'} size="large" color="secondary" disableFocusRipple={true}>
-        <input type="checkbox" checked={sVal === 'ON' ? true : false} onChange={this.handleSwitch} id={sID} name={sID} />
-        <label htmlFor={sID}>
-          <div className="content">
-            <div className={'zone ' + zoneClass}>
-              <span>
-                <div></div>
-              </span>
-              <span>
-                <div></div>
-              </span>
-              <span>
-                <div></div>
-              </span>
-              <span>
-                <div></div>
-              </span>
-              <span>
-                <div></div>
-              </span>
-              <span>
-                <div></div>
-              </span>
-              {zoneClass.includes('zone33') ? (
-                <>
-                  <span>
-                    <div></div>
-                  </span>
-                  <span>
-                    <div></div>
-                  </span>
-                  <span>
-                    <div></div>
-                  </span>
-                </>
-              ) : (
-                ''
-              )}
-            </div>
-            <div>{sName}</div>
-          </div>
-        </label>
-      </Button>
-    );
-  }
-}
-export default Switch;
+  return (
+    <Paper 
+      shadow="sm" 
+      radius="lg" 
+      withBorder 
+      className={isOn ? 'switch-on' : 'switch-off'}
+      style={{ 
+        overflow: 'hidden',
+        transition: 'all 0.2s ease',
+        border: isOn ? `1px solid var(--mantine-color-teal-filled)` : undefined
+      }}
+    >
+      <UnstyledButton
+        onClick={handleToggle}
+        p="md"
+        style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: rem(8),
+          backgroundColor: isOn ? 'var(--mantine-color-teal-light)' : 'transparent',
+          color: isOn ? 'var(--mantine-color-teal-9)' : 'inherit',
+        }}
+      >
+        <div className={'zone ' + zoneClass} style={{ color: 'currentColor' }}>
+          {Array.from({ length: isZone33 ? 9 : 6 }).map((_, i) => (
+            <span key={i}>
+              <div></div>
+            </span>
+          ))}
+        </div>
+        <Stack gap={2} align="center">
+          <Text size="xs" fw={700} tt="uppercase" ls="0.5px">
+            {sName}
+          </Text>
+        </Stack>
+      </UnstyledButton>
+    </Paper>
+  );
+};
+
+export default Zone;

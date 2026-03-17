@@ -1,264 +1,226 @@
-import { Box, Grid, Container, Typography } from '@mui/material';
-import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Grid, 
+  Container, 
+  Title, 
+  Card, 
+  Group, 
+  ActionIcon, 
+  Dialog, 
+  Button, 
+  Stack, 
+  Text,
+  Modal,
+  Loader,
+  Paper,
+  Divider,
+  rem
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { IconSettings, IconAirConditioning, IconChevronRight } from '@tabler/icons-react';
 import Page from '../components/Page';
-import React from 'react';
 import Scenes from '../components/_dashboard/Scenes';
 import Temperature from '../components/_dashboard/temperature';
 import DoorSensor from '../components/_dashboard/doorsensors';
-import NTabs from './../components/NavSectionTab';
 import sidebarConfig from './../layouts/dashboard/SidebarConfig';
 import Fan from '../components/_dashboard/common/Fan';
 import Switch from '../components/_dashboard/common/Switch';
 import ActiveDevices from '../components/_dashboard/common/ActiveDevices';
+import ColorAndBrightness from '../components/_dashboard/common/ColorAndBrightness';
+import { usePortalTemplate } from '../theme';
+import IconM from '@mdi/react';
 import { mdiWaterBoiler, mdiAirConditioner } from '@mdi/js';
 import { decodeHtml } from './../utils/commons';
-import ColorAndBrightness from '../components/_dashboard/common/ColorAndBrightness';
-import Button from '@mui/material/Button';
-import Icon from '@mdi/react';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
-import SettingsIcon from '@mui/icons-material/Settings';
+import { gateway } from '../constants/deviceMap';
 
-const gateway = 'http://192.168.88.122:1880';
+export default function DashboardApp() {
+  const { template } = usePortalTemplate();
+  const [opened, { open, close }] = useDisclosure(false);
+  const [loading, setLoading] = useState(true);
+  const [states, setStates] = useState({
+    mfan: 'OFF', mfanspeed: 5,
+    kfan: 'OFF', kfanspeed: 5,
+    lfan: 'OFF', lfanspeed: 5,
+    dfan: 'OFF', dfanspeed: 5,
+    ofan: 'OFF', ofanspeed: 5,
+    mgyser: 'OFF', kgyser: 'OFF', ogyser: 'OFF'
+  });
 
-class DashboardApp extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      mfan: 'OFF',
-      mfanspeed: 5,
-      kfan: 'OFF',
-      kfanspeed: 5,
-      lfan: 'OFF',
-      lfanspeed: 5,
-      dfan: 'OFF',
-      dfanspeed: 5,
-      ofan: 'OFF',
-      ofanspeed: 5,
-      mgyser: 'OFF',
-      kgyser: 'OFF',
-      ogyser: 'OFF',
-      updateTimer: 0,
-      open: false,
-      fullscreen: false
+  const stateHandler = (obj, val) => {
+    setStates(prev => ({ ...prev, [obj]: val }));
+  };
+
+  const handleAllACOff = () => fetch(`${gateway}/allacoff/`).then(res => res.json());
+  const handleAllACOn = () => fetch(`${gateway}/allacon/`).then(res => res.json());
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const endpoints = [
+          { url: '/ogyserstatus', key: '2', field: 'ogyser' },
+          { url: '/mgyserstatus', key: '2', field: 'mgyser' },
+          { url: '/kgyserstatus', key: '8', field: 'kgyser' },
+          { url: '/oboardtwostatus', key: '1', field: 'ofan', speedField: 'ofanspeed' },
+          { url: '/lacboardstatus', key: '1', field: 'lfan', speedField: 'lfanspeed' },
+          { url: '/dboardstatus', key: '1', field: 'dfan', speedField: 'dfanspeed' },
+          { url: '/kboardtwostatus', key: '1', field: 'kfan', speedField: 'kfanspeed' },
+          { url: '/mboardtwostatus', key: '1', field: 'mfan', speedField: 'mfanspeed' }
+        ];
+
+        const results = await Promise.all(
+          endpoints.map(e => 
+            fetch(`${gateway}${e.url}`, { signal: controller.signal })
+              .then(r => r.text())
+              .catch(() => '{}')
+          )
+        );
+
+        clearTimeout(timeoutId);
+
+        const newStates = { ...states };
+        results.forEach((rawData, i) => {
+          try {
+            const config = endpoints[i];
+            const data = JSON.parse(decodeHtml(rawData));
+            const deviceData = data[config.key];
+            
+            if (deviceData) {
+              newStates[config.field] = deviceData.power;
+              if (config.speedField) {
+                newStates[config.speedField] = Math.round(deviceData.speed / 20);
+              }
+            }
+          } catch(e) {}
+        });
+
+        setStates(newStates);
+      } catch (err) {
+        console.error('Dashboard state fetch failed:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-  }
 
-  stateHandler(obj, val) {
-    this.setState({
-      [obj]: val
-    });
-  }
-  handleClose = (e) => {
-    this.setState({ open: false });
-  }
-  handleSettings = (e) => {
-    this.setState({ open: true });
-  }
-  routeChange(e) {
-    window.location.href = '/dashboard/' + e;
-  }
-  handleAllACOff = (e) => {
-    fetch(gateway + '/allacoff/').then((response) => response.json());
-  };
-  handleAllACOn = (e) => {
-    fetch(gateway + '/allacon/').then((response) => response.json());
-  };
-  componentWillUnmount() {
-    clearInterval(this.updateTimer);
-  }
-  componentDidMount() {
-    this.updateTimer = setInterval(() => window.location.reload(), 300000);
-    var that = this;
-    fetch(gateway + '/ogyserstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ ogyser: data['2'].power });
-      });
-    fetch(gateway + '/mgyserstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ mgyser: data['2'].power });
-      });
-    fetch(gateway + '/kgyserstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ kgyser: data['8'].power });
-      });
-    fetch(gateway + '/oboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ ofan: data['1'].power });
-        var speed = data['1'].speed;
-        this.setState({ ofanspeed: Math.round(speed / 20) });
-      });
-    fetch(gateway + '/lacboardstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = decodeHtml(data);
-        data = JSON.parse(data);
-        var speed = data['1'].speed;
-        this.setState({ lfanspeed: Math.round(speed / 20) });
-        this.setState({ lfan: data['1'].power });
-      });
-    fetch(gateway + '/dboardstatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = decodeHtml(data);
-        data = JSON.parse(data);
-        this.setState({ dfan: data['1'].power });
-        var speed = data['1'].speed;
-        this.setState({ dfanspeed: Math.round(speed / 20) });
-      });
-    fetch(gateway + '/kboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ kfan: data['1'].power });
-        var speed = data['1'].speed;
-        this.setState({ kfanspeed: Math.round(speed / 20) });
-      });
-    fetch(gateway + '/mboardtwostatus')
-      .then((response) => response.text())
-      .then((data) => {
-        data = JSON.parse(decodeHtml(data));
-        this.setState({ mfan: data['1'].power });
-        var speed = data['1'].speed;
-        this.setState({ mfanspeed: Math.round(speed / 20) });
-        this.setState({ loading: false });
-      });
-  }
+    fetchData();
+    const refreshId = setInterval(() => window.location.reload(), 300000);
+    return () => clearInterval(refreshId);
+  }, []);
 
-  render() {
-    var stateHandler = this.stateHandler;
-    return (
-      <Page title="Myhome E302">
-        <Container maxWidth="xl">
-          <Box sx={{ pb: 0 }}>
-            <Typography variant="h4" sx={{ mb: 2 }}>Welcome, E302!</Typography>
-          </Box>
+  return (
+    <Page title="Myhome E302">
+      <Container size="xl" py="xl">
+        <Grid gutter="xl">
+          {/* Welcome Section - Wide Span */}
+          <Grid.Col span={12}>
+            <Box mb="md">
+              <Title order={1} fw={900} style={{ fontSize: rem(42), letterSpacing: '-1px' }}>
+                Welcome, <Text component="span" variant="gradient" gradient={template === 'control' ? { from: 'orange', to: 'red' } : { from: 'teal', to: 'cyan' }} inherit>E302</Text>
+              </Title>
+              <Text c="dimmed" fw={500}>System status is normal. Dashboard in {template.charAt(0).toUpperCase() + template.slice(1)} mode.</Text>
+            </Box>
+          </Grid.Col>
 
-          {/* ACTIVE APPLIANCES ROW */}
-          <ActiveDevices />
+          {/* Active Appliances - Bento Span */}
+          <Grid.Col span={{ base: 12, md: template === 'classic' ? 12 : 8 }}>
+            <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" withBorder={template === 'classic'}>
+              <ActiveDevices />
+            </Paper>
+          </Grid.Col>
 
-          <NTabs navConfig={sidebarConfig} style={{ marginBottom: 24 }} />
+          {/* Sensors - Bento Span */}
+          <Grid.Col span={{ base: 12, md: template === 'classic' ? 12 : 4 }}>
+            <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" h="100%" withBorder={template === 'classic'}>
+              <Stack gap="xl">
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" ls="1px">Environment</Text>
+                <Group justify="space-between">
+                   <Temperature room="living" />
+                </Group>
+                <Divider opacity={0.1} />
+                <Stack gap="sm">
+                  <DoorSensor room="Main balcony" />
+                  <DoorSensor room="Service balcony" />
+                </Stack>
+              </Stack>
+            </Paper>
+          </Grid.Col>
 
-          <Card sx={{ bgcolor: 'background.paper', color: 'text.primary' }} >
-            <CardHeader style={{ paddingBottom: "16px" }}
-              action={
-                <IconButton aria-label="fingerprint" color="success" onClick={this.handleSettings} >
-                  <SettingsIcon />
-                </IconButton>
-              }
-              title={
-                <Grid container spacing={2} style={{ display: 'flex' }} item xs={12}>
-                  <Grid item>
-                    <Temperature room="living" />
-                  </Grid>
-                  <Grid item><DoorSensor room="Main balcony" /></Grid>
-                  <Grid item><DoorSensor room="Service balcony" /></Grid>
+          {loading ? (
+            <Grid.Col span={12}>
+              <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="50px" withBorder={template === 'classic'}>
+                <Group justify="center">
+                  <Loader color={template === 'control' ? 'orange' : 'teal'} size="xl" type="bars" />
+                  <Text fw={600} size="lg">Initializing Home Control...</Text>
+                </Group>
+              </Paper>
+            </Grid.Col>
+          ) : (
+            <>
+              {/* Fans Section */}
+              <Grid.Col span={12}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Fans & Circulation</Text>
+                <Grid gutter="lg">
+                  {[
+                    { id: 'dfan', name: 'Drawing' },
+                    { id: 'mfan', name: 'Bedroom' },
+                    { id: 'lfan', name: 'Living' },
+                    { id: 'kfan', name: 'Kids' },
+                    { id: 'ofan', name: 'Office' }
+                  ].map(fan => (
+                    <Grid.Col key={fan.id} span={{ base: 12, sm: 6, lg: template === 'classic' ? 4 : 4 }}>
+                      <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'xs' : 'none'} p="md" withBorder={template === 'classic'}>
+                        <Fan 
+                          sVal={states[fan.id]} 
+                          sFval={states[`${fan.id}speed`]} 
+                          sID={fan.id} 
+                          sIDFS={`${fan.id}speed`} 
+                          sName={fan.name} 
+                          stateHandler={stateHandler} 
+                        />
+                      </Paper>
+                    </Grid.Col>
+                  ))}
                 </Grid>
-              }
-            />
-          </Card>
-          <Dialog
-            className='dark-dialog'
-            fullScreen={this.state.fullscreen}
-            open={this.state.open}
-            onClose={this.handleClose}
-            aria-labelledby="responsive-dialog-title"
-          >
-            <DialogTitle id="responsive-dialog-title">
-              {"Home Settings"}
-            </DialogTitle>
-            <DialogContent>
-              <Grid container spacing={2}>
-                <Grid item>
-                  <ColorAndBrightness cDefaultValue={this.state.commoncolor} bDefaultValue={this.state.commonbright} sColor="commoncolor" sBrightness="commonbright" stateHandler={stateHandler.bind(this)} />
+              </Grid.Col>
+
+              {/* Geysers Section */}
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Geysers</Text>
+                <Grid gutter="lg">
+                  {[
+                    { id: 'mgyser', name: 'Bedroom' },
+                    { id: 'ogyser', name: 'Office' },
+                    { id: 'kgyser', name: 'Kids' }
+                  ].map(gyser => (
+                    <Grid.Col key={gyser.id} span={{ base: 12, sm: 4 }}>
+                      <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'xs' : 'none'} p="md" withBorder={template === 'classic'}>
+                        <Switch 
+                          sVal={states[gyser.id]} 
+                          sID={gyser.id} 
+                          sIcon={mdiWaterBoiler} 
+                          sName={gyser.name} 
+                          stateHandler={stateHandler} 
+                        />
+                      </Paper>
+                    </Grid.Col>
+                  ))}
                 </Grid>
-                <Grid item>
-                  <Button className='scene-switch' variant="outlined" onClick={this.handleAllACOn} size="large" color="secondary" disableFocusRipple={true}>
-                    <div className="content">
-                      <label>
-                        <Icon path={mdiAirConditioner} size={1.5} />
-                        <div>All AC on</div>
-                      </label>
-                    </div>
-                  </Button>
-                </Grid>
-                <Grid item>
-                  <Button className='scene-switch' variant="outlined" onClick={this.handleAllACOff} size="large" color="secondary" disableFocusRipple={true}>
-                    <div className="content">
-                      <label>
-                        <Icon path={mdiAirConditioner} size={1.5} />
-                        <div>All AC off</div>
-                      </label>
-                    </div>
-                  </Button>
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button autoFocus onClick={this.handleClose}>
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
-          <>
-            {this.state.loading ? (
-              <div>Loading</div>
-            ) : (
-              <>
-                <Grid pt={2} pb={2} sm={12}>
-                  <Grid container spacing={2}>
-                    <Grid item>
-                      <Fan sVal={this.state.dfan} sFval={this.state.dfanspeed} sID="dfan" sIDFS="dfanspeed" sName="Drawing" stateHandler={stateHandler.bind(this)} />
-                    </Grid>
-                    <Grid item>
-                      <Fan sVal={this.state.mfan} sFval={this.state.mfanspeed} sID="mfan" sIDFS="mfanspeed" sName="Bedroom" stateHandler={stateHandler.bind(this)} />
-                    </Grid>
-                    <Grid item>
-                      <Fan sVal={this.state.lfan} sFval={this.state.lfanspeed} sID="lfan" sIDFS="lfanspeed" sName="Living" stateHandler={stateHandler.bind(this)} />
-                    </Grid>
-                    <Grid item>
-                      <Fan sVal={this.state.kfan} sFval={this.state.kfanspeed} sID="kfan" sIDFS="kfanspeed" sName="Kids" stateHandler={stateHandler.bind(this)} />
-                    </Grid>
-                    <Grid item>
-                      <Fan sVal={this.state.ofan} sFval={this.state.ofanspeed} sID="ofan" sIDFS="ofanspeed" sName="Office" stateHandler={stateHandler.bind(this)} />
-                    </Grid>
-                  </Grid>
-                </Grid>
-                <Grid pb={2} sm={12}>
-                  <Grid container spacing={2}>
-                    <Grid item>
-                      <Switch sVal={this.state.mgyser} sID="mgyser" sIcon={mdiWaterBoiler} sName="Bedroom" stateHandler={stateHandler.bind(this)}></Switch>
-                    </Grid>
-                    <Grid item>
-                      <Switch sVal={this.state.ogyser} sID="ogyser" sIcon={mdiWaterBoiler} sName="Office" stateHandler={stateHandler.bind(this)}></Switch>
-                    </Grid>
-                    <Grid item>
-                      <Switch sVal={this.state.kgyser} sID="kgyser" sIcon={mdiWaterBoiler} sName="Kids" stateHandler={stateHandler.bind(this)}></Switch>
-                    </Grid>
-                  </Grid>
-                </Grid>
-              </>
-            )}
-          </>
-          <Grid sm={12}>
-            <Scenes />
-          </Grid>
-        </Container>
-      </Page >
-    );
-  }
+              </Grid.Col>
+
+              {/* Scenes Section */}
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Quick Scenes</Text>
+                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" h="calc(100% - 32px)" withBorder={template === 'classic'}>
+                   <Scenes />
+                </Paper>
+              </Grid.Col>
+            </>
+          )}
+        </Grid>
+      </Container>
+    </Page>
+  );
 }
-export default DashboardApp;
