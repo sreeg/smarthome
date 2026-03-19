@@ -9,6 +9,7 @@ import {
 } from '@mantine/core';
 import Icon from '@mdi/react';
 import { gateway } from '../../../constants/deviceMap';
+import { addToRecents } from '../../../utils/recents';
 
 const Switch = ({ sVal, sID, sIcon, sName, stateHandler }) => {
   const theme = useMantineTheme();
@@ -21,6 +22,7 @@ const Switch = ({ sVal, sID, sIcon, sName, stateHandler }) => {
     
     if (stateHandler) stateHandler(sID, stateVal);
     fetch(`${gateway}/${sID}/${apiVal}`).then((response) => response.json());
+    addToRecents(sID);
   };
 
   return (

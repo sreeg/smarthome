@@ -1,24 +1,11 @@
 import { useState } from 'react';
 import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom';
 import { 
-  AppShell, 
-  Burger, 
-  Group, 
-  Text, 
-  NavLink, 
-  Stack, 
-  ScrollArea, 
-  rem,
-  Avatar,
-  Box,
-  ActionIcon,
-  Tooltip,
-  useMantineColorScheme,
-  SegmentedControl
+  AppShell, Burger, Group, Text, NavLink, Stack, ScrollArea, rem,
+  Avatar, Box, ActionIcon, Tooltip, useMantineColorScheme, SegmentedControl, Modal, Button, Grid 
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconSun, IconMoon, IconSearch, IconAdjustments, IconUser, IconSettings, IconAirConditioning } from '@tabler/icons-react';
-import { Modal, Button, Grid } from '@mantine/core';
+import { IconSun, IconMoon, IconAdjustments, IconSettings, IconAirConditioning } from '@tabler/icons-react';
 import ColorAndBrightness from '../../components/_dashboard/common/ColorAndBrightness';
 import { gateway } from '../../constants/deviceMap';
 import sidebarConfig from './SidebarConfig';
@@ -28,9 +15,8 @@ import Logo from '../../components/Logo';
 import Searchbar from './MantineSearchbar';
 import './app.css';
 
-export default function MantineLayout() {
+export default function ClassicLayout() {
   const [opened, { toggle }] = useDisclosure();
-  const [hovered, setHovered] = useState(false);
   const location = useLocation();
   const [openedSettings, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const { mode, toggleThemeMode } = useThemeMode();
@@ -52,22 +38,13 @@ export default function MantineLayout() {
   return (
     <AppShell
       header={{ height: 70 }}
-      navbar={{
-        width: template === 'classic' ? 250 : (hovered ? 250 : 80),
-        breakpoint: 'sm',
-        collapsed: { mobile: !opened },
-      }}
+      navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
       styles={(theme) => ({
-        main: {
-          backgroundColor: mode === 'dark' ? '#1a1b1e' : '#f8f9fa',
-          backgroundImage: template === 'classic' ? 'none' : (mode === 'dark' 
-            ? 'radial-gradient(circle at top right, rgba(20, 150, 150, 0.05), transparent), radial-gradient(circle at bottom left, rgba(150, 20, 150, 0.05), transparent)'
-            : 'radial-gradient(circle at top right, rgba(0, 150, 255, 0.03), transparent), radial-gradient(circle at bottom left, rgba(255, 150, 0, 0.03), transparent)'),
-        }
+        main: { backgroundColor: mode === 'dark' ? '#1a1b1e' : '#f8f9fa' }
       })}
     >
-      <AppShell.Header className={template !== 'classic' ? "glass-container" : ""} style={{ border: template === 'classic' ? undefined : 'none' }}>
+      <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group gap="lg">
             <Group>
@@ -79,8 +56,7 @@ export default function MantineLayout() {
             
             <Group gap="xs" style={{ 
               backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
-              padding: '6px 14px 6px 6px',
-              borderRadius: rem(30)
+              padding: '6px 14px 6px 6px', borderRadius: rem(30)
             }}>
               <Avatar src={account.photoURL} radius="xl" size={rem(28)} />
               <Text size="sm" fw={600}>{account.displayName}</Text>
@@ -91,8 +67,7 @@ export default function MantineLayout() {
             <SegmentedControl 
               value={template}
               onChange={setTemplate}
-              radius="md"
-              size="sm"
+              radius="md" size="sm"
               data={[
                 { label: 'Classic', value: 'classic' },
                 { label: 'Bento', value: 'bento' },
@@ -108,21 +83,12 @@ export default function MantineLayout() {
           <Group>
             <Searchbar />
             <Tooltip label="Home Settings">
-              <ActionIcon 
-                variant="default" 
-                onClick={openSettings} 
-                size="lg" 
-              >
+              <ActionIcon variant="default" onClick={openSettings} size="lg">
                 <IconSettings size="1.2rem" />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={colorScheme === 'dark' ? 'Switch to light' : 'Switch to dark'}>
-              <ActionIcon 
-                variant="default" 
-                onClick={handleThemeToggle} 
-                size="lg" 
-                aria-label="Toggle color scheme"
-              >
+              <ActionIcon variant="default" onClick={handleThemeToggle} size="lg">
                 {colorScheme === 'dark' ? <IconSun size="1.2rem" /> : <IconMoon size="1.2rem" />}
               </ActionIcon>
             </Tooltip>
@@ -130,15 +96,7 @@ export default function MantineLayout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar 
-        className={template !== 'classic' ? `glass-container mini-sidebar ${hovered ? 'expanded' : ''}` : ''}
-        p="md"
-        onMouseEnter={() => template !== 'classic' && setHovered(true)}
-        onMouseLeave={() => template !== 'classic' && setHovered(false)}
-        style={{ border: template === 'classic' ? undefined : 'none' }}
-      >
-
-
+      <AppShell.Navbar p="md">
         <AppShell.Section grow component={ScrollArea}>
           <Stack gap="xs">
             {sidebarConfig.map((item) => (
@@ -146,22 +104,14 @@ export default function MantineLayout() {
                 key={item.title}
                 component={RouterLink}
                 to={item.path}
-                label={(template === 'classic' || hovered) ? item.title : null}
+                label={item.title}
                 leftSection={item.icon}
                 active={location.pathname === item.path}
                 variant="filled"
                 styles={{
-                  root: { 
-                    borderRadius: 'var(--mantine-radius-md)',
-                    padding: rem(12),
-                    justifyContent: (template === 'classic' || hovered) ? 'flex-start' : 'center'
-                  },
-                  leftSection: { margin: 0, transition: 'transform 0.2s ease' },
-                  label: { 
-                    textTransform: 'capitalize', 
-                    fontWeight: 600,
-                    fontSize: rem(13)
-                  }
+                  root: { borderRadius: 'var(--mantine-radius-md)', padding: rem(12) },
+                  leftSection: { margin: 0 },
+                  label: { textTransform: 'capitalize', fontWeight: 600, fontSize: rem(13) }
                 }}
               />
             ))}
@@ -170,15 +120,11 @@ export default function MantineLayout() {
 
         <AppShell.Section mt="md">
            <NavLink 
-             label={(template === 'classic' || hovered) ? `Theme: ${mode}` : null} 
+             label={`Theme: ${mode}`} 
              leftSection={<IconAdjustments size="1.2rem" />}
              onClick={handleThemeToggle}
              styles={{
-               root: { 
-                 borderRadius: 'var(--mantine-radius-md)',
-                 padding: rem(12),
-                 justifyContent: (template === 'classic' || hovered) ? 'flex-start' : 'center'
-               },
+               root: { borderRadius: 'var(--mantine-radius-md)', padding: rem(12) },
                leftSection: { margin: 0 }
              }}
            />
@@ -194,9 +140,7 @@ export default function MantineLayout() {
           <Box hiddenFrom="md">
             <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="xs">Portal Template</Text>
             <SegmentedControl 
-              fullWidth
-              value={template}
-              onChange={setTemplate}
+              fullWidth value={template} onChange={setTemplate}
               data={[
                 { label: 'Classic', value: 'classic' },
                 { label: 'Bento', value: 'bento' },
@@ -204,30 +148,15 @@ export default function MantineLayout() {
               ]}
             />
           </Box>
-          <ColorAndBrightness 
-            sColor="commoncolor" 
-            sBrightness="commonbright" 
-          />
+          <ColorAndBrightness sColor="commoncolor" sBrightness="commonbright" />
           <Grid>
             <Grid.Col span={6}>
-              <Button 
-                fullWidth 
-                variant="light" 
-                color="teal" 
-                leftSection={<IconAirConditioning size="1rem" />}
-                onClick={handleAllACOn}
-              >
+              <Button fullWidth variant="light" color="teal" leftSection={<IconAirConditioning size="1rem" />} onClick={handleAllACOn}>
                 All AC On
               </Button>
             </Grid.Col>
             <Grid.Col span={6}>
-              <Button 
-                fullWidth 
-                variant="light" 
-                color="red" 
-                leftSection={<IconAirConditioning size="1rem" />}
-                onClick={handleAllACOff}
-              >
+              <Button fullWidth variant="light" color="red" leftSection={<IconAirConditioning size="1rem" />} onClick={handleAllACOff}>
                 All AC Off
               </Button>
             </Grid.Col>

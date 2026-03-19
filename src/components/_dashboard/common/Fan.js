@@ -12,6 +12,7 @@ import {
 import Icon from '@mdi/react';
 import { mdiCeilingFan } from '@mdi/js';
 import { gateway } from '../../../constants/deviceMap';
+import { addToRecents } from '../../../utils/recents';
 
 const Fan = ({ sVal, sFval, sID, sIDFS, sName, stateHandler }) => {
   const theme = useMantineTheme();
@@ -21,6 +22,7 @@ const Fan = ({ sVal, sFval, sID, sIDFS, sName, stateHandler }) => {
   const handleSpeedCommit = (v) => {
     fetch(`${gateway}/${sIDFS}/${v}`).then((response) => response.json());
     if (stateHandler) stateHandler(sIDFS, Math.round(v / 20));
+    addToRecents(sID);
   };
 
   const handleToggle = () => {
@@ -29,6 +31,7 @@ const Fan = ({ sVal, sFval, sID, sIDFS, sName, stateHandler }) => {
     const apiVal = newState ? 'ON' : 'OFF';
     fetch(`${gateway}/${sID}/${apiVal.toLowerCase()}`).then((response) => response.json());
     if (stateHandler) stateHandler(sID, apiVal);
+    addToRecents(sID);
   };
 
   return (

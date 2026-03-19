@@ -8,6 +8,7 @@ import {
   useMantineTheme
 } from '@mantine/core';
 import { gateway } from '../../../constants/deviceMap';
+import { addToRecents } from '../../../utils/recents';
 
 const SwitchCustomIcon = ({ sVal, sID, sIcon, sName, stateHandler }) => {
   const isOn = sVal === 'ON';
@@ -19,6 +20,7 @@ const SwitchCustomIcon = ({ sVal, sID, sIcon, sName, stateHandler }) => {
     
     if (stateHandler) stateHandler(sID, stateVal);
     fetch(`${gateway}/${sID}/${apiVal}`).then((response) => response.json());
+    addToRecents(sID);
   };
 
   return (

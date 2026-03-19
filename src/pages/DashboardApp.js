@@ -29,23 +29,17 @@ import Switch from '../components/_dashboard/common/Switch';
 import ActiveDevices from '../components/_dashboard/common/ActiveDevices';
 import ColorAndBrightness from '../components/_dashboard/common/ColorAndBrightness';
 import { usePortalTemplate } from '../theme';
-import IconM from '@mdi/react';
-import { mdiWaterBoiler, mdiAirConditioner } from '@mdi/js';
 import { decodeHtml } from './../utils/commons';
-import { gateway } from '../constants/deviceMap';
+import { gateway, deviceMap } from '../constants/deviceMap';
+import { getRecents } from '../utils/recents';
+import { mdiWaterBoiler, mdiAirConditioner, mdiLightbulbVariant, mdiPowerSocketEu } from '@mdi/js';
 
 export default function DashboardApp() {
   const { template } = usePortalTemplate();
   const [opened, { open, close }] = useDisclosure(false);
   const [loading, setLoading] = useState(true);
-  const [states, setStates] = useState({
-    mfan: 'OFF', mfanspeed: 5,
-    kfan: 'OFF', kfanspeed: 5,
-    lfan: 'OFF', lfanspeed: 5,
-    dfan: 'OFF', dfanspeed: 5,
-    ofan: 'OFF', ofanspeed: 5,
-    mgyser: 'OFF', kgyser: 'OFF', ogyser: 'OFF'
-  });
+  const [states, setStates] = useState({});
+  const [recentEndpoints, setRecentEndpoints] = useState([]);
 
   const stateHandler = (obj, val) => {
     setStates(prev => ({ ...prev, [obj]: val }));
@@ -60,19 +54,23 @@ export default function DashboardApp() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
-        const endpoints = [
-          { url: '/ogyserstatus', key: '2', field: 'ogyser' },
-          { url: '/mgyserstatus', key: '2', field: 'mgyser' },
-          { url: '/kgyserstatus', key: '8', field: 'kgyser' },
-          { url: '/oboardtwostatus', key: '1', field: 'ofan', speedField: 'ofanspeed' },
-          { url: '/lacboardstatus', key: '1', field: 'lfan', speedField: 'lfanspeed' },
-          { url: '/dboardstatus', key: '1', field: 'dfan', speedField: 'dfanspeed' },
-          { url: '/kboardtwostatus', key: '1', field: 'kfan', speedField: 'kfanspeed' },
-          { url: '/mboardtwostatus', key: '1', field: 'mfan', speedField: 'mfanspeed' }
-        ];
+        const savedRecents = getRecents();
+        let endpointsConfig = savedRecents
+          .map(id => deviceMap.find(d => d.id === id))
+          .filter(Boolean)
+          .map(d => ({ url: d.url, key: d.key, field: d.id, speedField: d.type === 'fan' ? `${d.id}speed` : undefined, type: d.type, name: d.name }));
+
+        if (endpointsConfig.length === 0) {
+          endpointsConfig = [
+            { id: 'dfan' }, { id: 'mfan' }, { id: 'lfan' }, { id: 'mgyser' }
+          ].map(d => {
+             const dev = deviceMap.find(x => x.id === d.id);
+             return dev ? { url: dev.url, key: dev.key, field: dev.id, speedField: dev.type === 'fan' ? `${dev.id}speed` : undefined, type: dev.type, name: dev.name } : null;
+          }).filter(Boolean);
+        }
 
         const results = await Promise.all(
-          endpoints.map(e => 
+          endpointsConfig.map(e => 
             fetch(`${gateway}${e.url}`, { signal: controller.signal })
               .then(r => r.text())
               .catch(() => '{}')
@@ -84,20 +82,24 @@ export default function DashboardApp() {
         const newStates = { ...states };
         results.forEach((rawData, i) => {
           try {
-            const config = endpoints[i];
+            const config = endpointsConfig[i];
             const data = JSON.parse(decodeHtml(rawData));
-            const deviceData = data[config.key];
+            const deviceData = config.type === 'switch' && typeof data.state !== 'undefined' ? data : data[config.key];
             
             if (deviceData) {
-              newStates[config.field] = deviceData.power;
-              if (config.speedField) {
+              const powerVal = typeof deviceData === 'string' 
+                ? deviceData 
+                : (deviceData.power || deviceData.state || 'OFF');
+              newStates[config.field] = powerVal;
+              if (config.speedField && deviceData.speed !== undefined) {
                 newStates[config.speedField] = Math.round(deviceData.speed / 20);
               }
             }
           } catch(e) {}
         });
 
-        setStates(newStates);
+        setRecentEndpoints(endpointsConfig);
+        setStates(prev => ({ ...prev, ...newStates }));
       } catch (err) {
         console.error('Dashboard state fetch failed:', err);
       } finally {
@@ -157,56 +159,52 @@ export default function DashboardApp() {
             </Grid.Col>
           ) : (
             <>
-              {/* Fans Section */}
-              <Grid.Col span={12}>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Fans & Circulation</Text>
-                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
-                  <Grid gutter="md">
-                    {[
-                      { id: 'dfan', name: 'Drawing' },
-                      { id: 'mfan', name: 'Bedroom' },
-                      { id: 'lfan', name: 'Living' },
-                      { id: 'kfan', name: 'Kids' },
-                      { id: 'ofan', name: 'Office' }
-                    ].map(fan => (
-                      <Grid.Col key={fan.id} span={{ base: 12, sm: 6, lg: 4 }}>
-                        <Fan 
-                          sVal={states[fan.id]} 
-                          sFval={states[`${fan.id}speed`]} 
-                          sID={fan.id} 
-                          sIDFS={`${fan.id}speed`} 
-                          sName={fan.name} 
-                          stateHandler={stateHandler} 
-                        />
-                      </Grid.Col>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid.Col>
+              {/* Recents Section */}
+              {recentEndpoints.length > 0 && (
+                <Grid.Col span={12}>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Recently Used</Text>
+                  <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
+                    <Grid gutter="md">
+                      {recentEndpoints.map(device => {
+                        let renderItem = null;
+                        if (device.type === 'fan') {
+                          renderItem = (
+                            <Fan 
+                              sVal={states[device.field]} 
+                              sFval={states[`${device.field}speed`]} 
+                              sID={device.field} 
+                              sIDFS={`${device.field}speed`} 
+                              sName={device.name} 
+                              stateHandler={stateHandler} 
+                            />
+                          );
+                        } else {
+                          let iconPath = mdiLightbulbVariant;
+                          if (device.type === 'geyser') iconPath = mdiWaterBoiler;
+                          if (device.type === 'socket') iconPath = mdiPowerSocketEu;
+                          if (device.type === 'ac') iconPath = mdiAirConditioner;
+                          
+                          renderItem = (
+                            <Switch 
+                              sVal={states[device.field]} 
+                              sID={device.field} 
+                              sIcon={iconPath} 
+                              sName={device.name} 
+                              stateHandler={stateHandler} 
+                            />
+                          );
+                        }
 
-              {/* Geysers Section */}
-              <Grid.Col span={{ base: 12, md: 7 }}>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Geysers</Text>
-                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
-                  <Grid gutter="md">
-                    {[
-                      { id: 'mgyser', name: 'Bedroom' },
-                      { id: 'ogyser', name: 'Office' },
-                      { id: 'kgyser', name: 'Kids' }
-                    ].map(gyser => (
-                      <Grid.Col key={gyser.id} span={{ base: 12, sm: 4 }}>
-                        <Switch 
-                          sVal={states[gyser.id]} 
-                          sID={gyser.id} 
-                          sIcon={mdiWaterBoiler} 
-                          sName={gyser.name} 
-                          stateHandler={stateHandler} 
-                        />
-                      </Grid.Col>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid.Col>
+                        return (
+                          <Grid.Col key={device.field} span={{ base: 12, sm: 6, lg: 4 }}>
+                            {renderItem}
+                          </Grid.Col>
+                        );
+                      })}
+                    </Grid>
+                  </Paper>
+                </Grid.Col>
+              )}
 
               {/* Scenes Section */}
               <Grid.Col span={{ base: 12, md: 5 }}>

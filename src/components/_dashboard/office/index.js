@@ -146,9 +146,6 @@ export default function OfficeRoom() {
 
   return (
     <Stack gap="xl" pb="xl">
-      <Paper p="md" radius="lg" shadow="sm" withBorder>
-        <Temperature room="office" />
-      </Paper>
 
       <Grid gutter="md" align="center">
         <Grid.Col span={{ base: 12, md: 'auto' }}>

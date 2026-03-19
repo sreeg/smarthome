@@ -11,6 +11,7 @@ import {
   Box
 } from '@mantine/core';
 import { gateway } from '../../../constants/deviceMap';
+import { addToRecents } from '../../../utils/recents';
 
 const Zone = ({ sVal, zoneClass, sID, sName, stateHandler }) => {
   const theme = useMantineTheme();
@@ -23,6 +24,7 @@ const Zone = ({ sVal, zoneClass, sID, sName, stateHandler }) => {
     
     if (stateHandler) stateHandler(sID, stateVal);
     fetch(`${gateway}/${sID}/${apiVal}`).then((response) => response.json());
+    addToRecents(sID);
   };
 
   const isZone33 = zoneClass.includes('zone33');
