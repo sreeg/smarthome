@@ -33,7 +33,7 @@ export default function DoorSensors({ room }) {
 
   if (loading) return <Loader size="xs" color="teal" />;
 
-  const isOpen = data.contact === 'false';
+  const isOpen = data.contact === 'true';
 
   return (
     <Group gap="xs" wrap="nowrap">

@@ -33,7 +33,6 @@ export default function Scenes() {
 
   return (
     <Box>
-      <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Scenes</Text>
       <Grid gutter="md">
         {sceneButtons.map((scene, index) => (
           <Grid.Col key={index} span={{ base: 6, sm: 4, lg: 2.4 }}>

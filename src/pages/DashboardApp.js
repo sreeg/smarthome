@@ -112,39 +112,37 @@ export default function DashboardApp() {
 
   return (
     <Page title="Myhome E302">
-      <Container size="xl" py="xl">
-        <Grid gutter="xl">
+      <Container size="xl" py="md">
+        <Grid gutter="md">
           {/* Welcome Section - Wide Span */}
           <Grid.Col span={12}>
             <Box mb="md">
-              <Title order={1} fw={900} style={{ fontSize: rem(42), letterSpacing: '-1px' }}>
-                Welcome, <Text component="span" variant="gradient" gradient={template === 'control' ? { from: 'orange', to: 'red' } : { from: 'teal', to: 'cyan' }} inherit>E302</Text>
-              </Title>
-              <Text c="dimmed" fw={500}>System status is normal. Dashboard in {template.charAt(0).toUpperCase() + template.slice(1)} mode.</Text>
+              <Group justify="space-between" align="flex-start">
+                <Box>
+                  <Title order={1} fw={900} style={{ fontSize: rem(42), letterSpacing: '-1px' }}>
+                    Welcome, <Text component="span" variant="gradient" gradient={template === 'control' ? { from: 'orange', to: 'red' } : { from: 'teal', to: 'cyan' }} inherit>E302</Text>
+                  </Title>
+                  <Text c="dimmed" fw={500}>System status is normal. Dashboard in {template.charAt(0).toUpperCase() + template.slice(1)} mode.</Text>
+                </Box>
+                <Group gap="md">
+                  <Paper p="sm" radius="md" withBorder className={template !== 'classic' ? "glass-container" : ""}>
+                    <Temperature room="living" />
+                  </Paper>
+                  <Paper p="sm" radius="md" withBorder className={template !== 'classic' ? "glass-container" : ""}>
+                    <Group gap="md" align="center">
+                      <DoorSensor room="Main balcony" />
+                      <DoorSensor room="Service balcony" />
+                    </Group>
+                  </Paper>
+                </Group>
+              </Group>
             </Box>
           </Grid.Col>
 
           {/* Active Appliances - Bento Span */}
-          <Grid.Col span={{ base: 12, md: template === 'classic' ? 12 : 8 }}>
-            <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" withBorder={template === 'classic'}>
+          <Grid.Col span={12}>
+            <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
               <ActiveDevices />
-            </Paper>
-          </Grid.Col>
-
-          {/* Sensors - Bento Span */}
-          <Grid.Col span={{ base: 12, md: template === 'classic' ? 12 : 4 }}>
-            <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" h="100%" withBorder={template === 'classic'}>
-              <Stack gap="xl">
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" ls="1px">Environment</Text>
-                <Group justify="space-between">
-                   <Temperature room="living" />
-                </Group>
-                <Divider opacity={0.1} />
-                <Stack gap="sm">
-                  <DoorSensor room="Main balcony" />
-                  <DoorSensor room="Service balcony" />
-                </Stack>
-              </Stack>
             </Paper>
           </Grid.Col>
 
@@ -161,17 +159,17 @@ export default function DashboardApp() {
             <>
               {/* Fans Section */}
               <Grid.Col span={12}>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Fans & Circulation</Text>
-                <Grid gutter="lg">
-                  {[
-                    { id: 'dfan', name: 'Drawing' },
-                    { id: 'mfan', name: 'Bedroom' },
-                    { id: 'lfan', name: 'Living' },
-                    { id: 'kfan', name: 'Kids' },
-                    { id: 'ofan', name: 'Office' }
-                  ].map(fan => (
-                    <Grid.Col key={fan.id} span={{ base: 12, sm: 6, lg: template === 'classic' ? 4 : 4 }}>
-                      <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'xs' : 'none'} p="md" withBorder={template === 'classic'}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Fans & Circulation</Text>
+                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
+                  <Grid gutter="md">
+                    {[
+                      { id: 'dfan', name: 'Drawing' },
+                      { id: 'mfan', name: 'Bedroom' },
+                      { id: 'lfan', name: 'Living' },
+                      { id: 'kfan', name: 'Kids' },
+                      { id: 'ofan', name: 'Office' }
+                    ].map(fan => (
+                      <Grid.Col key={fan.id} span={{ base: 12, sm: 6, lg: 4 }}>
                         <Fan 
                           sVal={states[fan.id]} 
                           sFval={states[`${fan.id}speed`]} 
@@ -180,23 +178,23 @@ export default function DashboardApp() {
                           sName={fan.name} 
                           stateHandler={stateHandler} 
                         />
-                      </Paper>
-                    </Grid.Col>
-                  ))}
-                </Grid>
+                      </Grid.Col>
+                    ))}
+                  </Grid>
+                </Paper>
               </Grid.Col>
 
               {/* Geysers Section */}
               <Grid.Col span={{ base: 12, md: 7 }}>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Geysers</Text>
-                <Grid gutter="lg">
-                  {[
-                    { id: 'mgyser', name: 'Bedroom' },
-                    { id: 'ogyser', name: 'Office' },
-                    { id: 'kgyser', name: 'Kids' }
-                  ].map(gyser => (
-                    <Grid.Col key={gyser.id} span={{ base: 12, sm: 4 }}>
-                      <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'xs' : 'none'} p="md" withBorder={template === 'classic'}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Geysers</Text>
+                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" withBorder={template === 'classic'}>
+                  <Grid gutter="md">
+                    {[
+                      { id: 'mgyser', name: 'Bedroom' },
+                      { id: 'ogyser', name: 'Office' },
+                      { id: 'kgyser', name: 'Kids' }
+                    ].map(gyser => (
+                      <Grid.Col key={gyser.id} span={{ base: 12, sm: 4 }}>
                         <Switch 
                           sVal={states[gyser.id]} 
                           sID={gyser.id} 
@@ -204,16 +202,16 @@ export default function DashboardApp() {
                           sName={gyser.name} 
                           stateHandler={stateHandler} 
                         />
-                      </Paper>
-                    </Grid.Col>
-                  ))}
-                </Grid>
+                      </Grid.Col>
+                    ))}
+                  </Grid>
+                </Paper>
               </Grid.Col>
 
               {/* Scenes Section */}
               <Grid.Col span={{ base: 12, md: 5 }}>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md" ls="1px">Quick Scenes</Text>
-                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="xl" h="calc(100% - 32px)" withBorder={template === 'classic'}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="sm" ls="1px">Quick Scenes</Text>
+                <Paper className={template !== 'classic' ? "glass-container bento-card" : ""} shadow={template === 'classic' ? 'sm' : 'none'} p="md" h="calc(100% - 28px)" withBorder={template === 'classic'}>
                    <Scenes />
                 </Paper>
               </Grid.Col>
