@@ -46,10 +46,10 @@ export default function Scenes() {
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: rem(8),
+                  backgroundColor: 'transparent',
                   transition: 'all 0.2s ease',
-                  backgroundColor: 'var(--mantine-color-gray-0)',
                   '&:hover': {
-                    backgroundColor: 'var(--mantine-color-gray-1)',
+                    backgroundColor: 'rgba(128, 128, 128, 0.1)',
                     transform: 'translateY(-2px)'
                   }
                 }}

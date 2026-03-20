@@ -46,7 +46,7 @@ export default function BentoLayout() {
       })}
     >
       <AppShell.Header className="glass-container" style={{ border: 'none' }}>
-        <Stack h="100%" px="xl" py="sm" gap="xs">
+        <Stack h="100%" px={{ base: 'md', md: 'xl' }} py="sm" gap="xs">
           <Group justify="space-between">
             <Group gap="lg">
               <Box component={RouterLink} to="/" style={{ display: 'flex', alignItems: 'center' }}>
@@ -107,6 +107,7 @@ export default function BentoLayout() {
                    styles={{
                      root: { 
                        transition: 'all 0.2s ease', 
+                       flexShrink: 0,
                        backgroundColor: location.pathname === item.path ? undefined : (mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)') 
                      }
                    }}
