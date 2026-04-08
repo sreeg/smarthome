@@ -55,19 +55,19 @@ export default function DashboardApp() {
 
       try {
         const savedRecents = getRecents();
-        let endpointsConfig = savedRecents
+        const defaultPins = ['mfan', 'mgyser', 'lfan', 'dfan', 'kfan', 'ofan', 'oac', 'lines', 'serotv', 'maczone'];
+        
+        let combinedIds = [...savedRecents];
+        if (combinedIds.length < 10) {
+          const needed = 10 - combinedIds.length;
+          const availableDefaults = defaultPins.filter(id => !combinedIds.includes(id));
+          combinedIds = [...combinedIds, ...availableDefaults.slice(0, needed)];
+        }
+        
+        let endpointsConfig = combinedIds
           .map(id => deviceMap.find(d => d.id === id))
           .filter(Boolean)
           .map(d => ({ url: d.url, key: d.key, field: d.id, speedField: d.type === 'fan' ? `${d.id}speed` : undefined, type: d.type, name: d.name }));
-
-        if (endpointsConfig.length === 0) {
-          endpointsConfig = [
-            { id: 'dfan' }, { id: 'mfan' }, { id: 'lfan' }, { id: 'mgyser' }
-          ].map(d => {
-             const dev = deviceMap.find(x => x.id === d.id);
-             return dev ? { url: dev.url, key: dev.key, field: dev.id, speedField: dev.type === 'fan' ? `${dev.id}speed` : undefined, type: dev.type, name: dev.name } : null;
-          }).filter(Boolean);
-        }
 
         const results = await Promise.all(
           endpointsConfig.map(e => 
